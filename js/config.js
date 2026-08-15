@@ -11,7 +11,7 @@ const SUPABASE_URL = 'https://undafgcijvuhvdmyjatk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn';
 
 // Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -110,9 +110,8 @@ function getAssetAgeStatus(registeredDate, assetName) {
   return { ageYears: Math.round(ageYears * 10) / 10, status, label, threshold };
 }
 
-// Export สำหรับใช้ทั่วระบบ
 window.CAD = {
-  supabase,
+  supabase: dbClient,
   SUPABASE_URL,
   getAssetAgeStatus,
   ASSET_AGE_THRESHOLDS
