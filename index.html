@@ -11,6 +11,23 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body class="login-page">
+  <!-- Global Error Catcher -->
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      alert("System Error: " + msg + "\nLine: " + line);
+      var errDiv = document.createElement('div');
+      errDiv.style.background = 'red';
+      errDiv.style.color = 'white';
+      errDiv.style.padding = '10px';
+      errDiv.style.position = 'fixed';
+      errDiv.style.top = '0';
+      errDiv.style.left = '0';
+      errDiv.style.zIndex = '9999';
+      errDiv.textContent = "Error: " + msg;
+      document.body.appendChild(errDiv);
+      return false;
+    };
+  </script>
 
   <!-- Background Pattern -->
   <div class="login-bg">
