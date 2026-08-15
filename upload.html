@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>อัปโหลดข้อมูล — ระบบครุภัณฑ์ กองบริหารงานกลาง มช.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="assets/images/cmu_logo_official.png" alt="มหาวิทยาลัยเชียงใหม่" class="sidebar-logo-banner" />
+      <span class="sidebar-brand-sub">กองบริหารงานกลาง · สำนักงานมหาวิทยาลัย</span>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">เมนูหลัก</span>
+      <a href="dashboard.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        ภาพรวม Dashboard
+      </a>
+      <a href="inventory.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        รายการครุภัณฑ์
+      </a>
+      <a href="report.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        รายงานผู้บริหาร
+      </a>
+      <span class="nav-section-label">จัดการระบบ</span>
+      <a href="upload.html" class="nav-link active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        อัปโหลดข้อมูล
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-info">
+          <div class="user-name truncate" id="navUserName">กำลังโหลด...</div>
+          <div class="user-role-badge" id="navUserRole"></div>
+        </div>
+        <button class="btn-signout" onclick="signOut()" aria-label="ออกจากระบบ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-menu-toggle btn-icon" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="page-title-group">
+          <h1 class="page-title">อัปโหลดข้อมูลครุภัณฑ์</h1>
+          <p class="page-subtitle">นำเข้าข้อมูลจากไฟล์ Excel เข้าสู่ฐานข้อมูล</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Upload Zone -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2 class="section-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            เลือกไฟล์ Excel
+          </h2>
+        </div>
+        <div class="section-card-body">
+
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" accept=".xlsx,.xls" aria-label="เลือกไฟล์ Excel" />
+            <div class="upload-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            </div>
+            <h3>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก</h3>
+            <p>รองรับไฟล์ .xlsx และ .xls ที่มีโครงสร้างตามแบบฟอร์มกองคลัง</p>
+            <span class="upload-hint">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              รองรับไฟล์ขนาดสูงสุด 25MB
+            </span>
+          </div>
+
+          <!-- File selected info -->
+          <div id="fileInfo" class="hidden" style="margin-top:1.25rem;padding:1rem;background:var(--cmu-purple-pale);border-radius:var(--border-radius-sm);display:flex;align-items:center;gap:0.875rem;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4A1E8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div style="flex:1;">
+              <div style="font-weight:600;color:var(--cmu-purple-dark);" id="fileName">—</div>
+              <div style="font-size:0.8rem;color:var(--gray-500);" id="fileSize">—</div>
+            </div>
+            <button onclick="clearFile()" class="btn btn-secondary btn-sm">ยกเลิก</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Table -->
+      <div id="previewSection" class="section-card hidden">
+        <div class="section-card-header">
+          <h2 class="section-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            ตัวอย่างข้อมูล (5 แถวแรก)
+          </h2>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <span id="previewCount" class="topbar-badge"></span>
+            <button id="btnImport" class="btn btn-primary" onclick="importData()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              นำเข้าข้อมูล
+            </button>
+          </div>
+        </div>
+        <div class="section-card-body" style="padding:0;">
+          <div class="table-wrap">
+            <table class="data-table" id="previewTable" aria-label="ตัวอย่างข้อมูล">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>คีย์สินทรัพย์</th>
+                  <th>วันที่ขึ้นทะเบียน</th>
+                  <th>ชื่อ</th>
+                  <th>งาน</th>
+                  <th>สภาพ</th>
+                  <th>ราคา (บาท)</th>
+                  <th>อาคาร</th>
+                </tr>
+              </thead>
+              <tbody id="previewBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div id="importProgress" class="section-card hidden">
+        <div class="section-card-body">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.75rem;">
+            <div class="loader-ring" style="width:28px;height:28px;border-width:2px;"></div>
+            <div>
+              <div style="font-weight:600;color:var(--gray-700);" id="progressLabel">กำลังนำเข้าข้อมูล...</div>
+              <div style="font-size:0.8rem;color:var(--gray-400);" id="progressDetail"></div>
+            </div>
+          </div>
+          <div class="upload-progress">
+            <div class="upload-progress-bar" id="progressBar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload History -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2 class="section-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            ประวัติการอัปโหลด
+          </h2>
+          <button class="btn btn-secondary btn-sm" onclick="loadHistory()">รีเฟรช</button>
+        </div>
+        <div class="section-card-body" style="padding:0;">
+          <div class="table-wrap">
+            <table class="data-table" id="historyTable" aria-label="ประวัติการอัปโหลด">
+              <thead>
+                <tr>
+                  <th>ชื่อไฟล์</th>
+                  <th>จำนวนรายการ</th>
+                  <th>วันที่นำเข้า</th>
+                  <th>ผู้นำเข้า</th>
+                  <th style="width:80px;"></th>
+                </tr>
+              </thead>
+              <tbody id="historyBody">
+                <tr><td colspan="5" class="text-center" style="padding:2rem;color:var(--gray-400);">กำลังโหลด...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="deleteModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="deleteModalTitle">ยืนยันการลบข้อมูล</h3>
+      <button class="btn-modal-close" onclick="closeDeleteModal()" aria-label="ปิด">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--gray-600);">คุณต้องการลบข้อมูลชุดนี้ออกจากฐานข้อมูลใช่หรือไม่?</p>
+      <p style="font-weight:600;color:var(--cmu-purple-dark);margin-top:0.5rem;" id="deleteModalFile"></p>
+      <div style="margin-top:1rem;padding:0.875rem;background:var(--color-danger-bg);border-radius:var(--border-radius-sm);font-size:0.85rem;color:var(--color-danger);">
+        ⚠️ การลบนี้ไม่สามารถกู้คืนได้ ข้อมูลครุภัณฑ์ที่นำเข้าในชุดนี้จะถูกลบทั้งหมด
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">ยกเลิก</button>
+      <button class="btn btn-danger" id="btnConfirmDelete" onclick="confirmDelete()">ลบข้อมูล</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/excel-parser.js"></script>
+<script>
+// ============================================================
+// Upload Page Logic
+// ============================================================
+
+let parsedData = null;
+let deleteBatchId = null;
+let currentUser = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  currentUser = await requireAuth(['admin']);
+  if (!currentUser) return;
+  await populateNavUser();
+  const nameEl = document.getElementById('navUserName');
+  const avatarEl = document.getElementById('userAvatar');
+  if (avatarEl && nameEl) avatarEl.textContent = (nameEl.textContent || '?').charAt(0).toUpperCase();
+  setupDropzone();
+  await loadHistory();
+});
+
+// ---- Dropzone ----
+function setupDropzone() {
+  const zone = document.getElementById('uploadZone');
+  const input = document.getElementById('fileInput');
+
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  input.addEventListener('change', () => {
+    if (input.files[0]) handleFile(input.files[0]);
+  });
+}
+
+async function handleFile(file) {
+  if (!file.name.match(/\.(xlsx|xls)$/i)) {
+    showToast('รองรับเฉพาะไฟล์ Excel (.xlsx, .xls) เท่านั้น', 'error');
+    return;
+  }
+
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = formatFileSize(file.size);
+  document.getElementById('fileInfo').classList.remove('hidden');
+  document.getElementById('fileInfo').style.display = 'flex';
+
+  showToast('กำลังอ่านไฟล์...', 'info');
+
+  try {
+    const result = await parseExcelFile(file);
+    parsedData = result;
+
+    document.getElementById('previewCount').textContent =
+      `${result.totalRows.toLocaleString()} รายการ (ข้ามว่าง ${result.skipped})`;
+
+    renderPreview(result.assets.slice(0, 5));
+    document.getElementById('previewSection').classList.remove('hidden');
+    showToast(`อ่านข้อมูลสำเร็จ: ${result.totalRows} รายการ`, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+    clearFile();
+  }
+}
+
+function renderPreview(assets) {
+  document.getElementById('previewBody').innerHTML = assets.map(a => `
+    <tr>
+      <td style="font-size:0.75rem;">${a.id || '-'}</td>
+      <td style="font-family:monospace;font-size:0.7rem;">${escHtml(a.asset_key || '-')}</td>
+      <td>${a.registered_date || '-'}</td>
+      <td><strong>${escHtml(a.name || '-')}</strong></td>
+      <td>${escHtml(a.department || '-')}</td>
+      <td>${escHtml(a.condition || '-')}</td>
+      <td style="text-align:right;">${a.cost ? a.cost.toLocaleString() : '-'}</td>
+      <td>${escHtml(a.building || '-')}</td>
+    </tr>
+  `).join('');
+}
+
+function clearFile() {
+  parsedData = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileInfo').style.display = 'none';
+  document.getElementById('fileInfo').classList.add('hidden');
+  document.getElementById('previewSection').classList.add('hidden');
+  document.getElementById('previewBody').innerHTML = '';
+}
+
+// ---- Import Data ----
+async function importData() {
+  if (!parsedData || !parsedData.assets.length) {
+    showToast('ไม่มีข้อมูลที่จะนำเข้า', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btnImport');
+  btn.disabled = true;
+  btn.textContent = 'กำลังนำเข้า...';
+  document.getElementById('importProgress').classList.remove('hidden');
+
+  try {
+    // 1. Create batch record
+    const session = await getSession();
+    const { data: batch, error: batchErr } = await CAD.supabase
+      .from('upload_batches')
+      .insert({
+        filename: document.getElementById('fileName').textContent,
+        uploaded_by: session.user.id,
+        total_rows: parsedData.totalRows
+      })
+      .select()
+      .single();
+
+    if (batchErr) throw new Error('ไม่สามารถสร้างบันทึกการอัปโหลดได้: ' + batchErr.message);
+
+    // 2. Insert assets in chunks
+    const CHUNK = 100;
+    const assets = parsedData.assets.map(a => ({ ...a, upload_batch_id: batch.id }));
+    let inserted = 0;
+
+    for (let i = 0; i < assets.length; i += CHUNK) {
+      const chunk = assets.slice(i, i + CHUNK);
+      const { error: insertErr } = await CAD.supabase.from('assets').insert(chunk);
+
+      if (insertErr) throw new Error('เกิดข้อผิดพลาดในการนำเข้า: ' + insertErr.message);
+
+      inserted += chunk.length;
+      const pct = Math.round(inserted / assets.length * 100);
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressLabel').textContent = `กำลังนำเข้าข้อมูล... ${pct}%`;
+      document.getElementById('progressDetail').textContent =
+        `${inserted.toLocaleString()} / ${assets.length.toLocaleString()} รายการ`;
+    }
+
+    document.getElementById('progressLabel').textContent = '✅ นำเข้าข้อมูลสำเร็จ!';
+    document.getElementById('progressDetail').textContent =
+      `นำเข้าทั้งหมด ${inserted.toLocaleString()} รายการ`;
+    showToast(`นำเข้าข้อมูลสำเร็จ ${inserted.toLocaleString()} รายการ`, 'success');
+    clearFile();
+    await loadHistory();
+
+  } catch (err) {
+    showToast(err.message, 'error');
+    document.getElementById('progressLabel').textContent = '❌ เกิดข้อผิดพลาด';
+    document.getElementById('progressDetail').textContent = err.message;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> นำเข้าข้อมูล`;
+}
+
+// ---- History ----
+async function loadHistory() {
+  const { data, error } = await CAD.supabase
+    .from('upload_batches')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  const tbody = document.getElementById('historyBody');
+
+  if (error || !data || !data.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="padding:2rem;color:var(--gray-400);">ยังไม่มีประวัติการอัปโหลด</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(b => `
+    <tr>
+      <td><strong>${escHtml(b.filename)}</strong></td>
+      <td>${(b.total_rows || 0).toLocaleString()} รายการ</td>
+      <td>${formatThaiDate(b.created_at)}</td>
+      <td style="font-size:0.8rem;color:var(--gray-500);">${escHtml(b.uploaded_by || '-').slice(0,8)}…</td>
+      <td>
+        <button class="btn btn-sm" style="color:var(--color-danger);border:1px solid var(--color-danger-bg);background:var(--color-danger-bg);"
+          onclick="openDeleteModal('${b.id}', '${escHtml(b.filename)}')">
+          ลบ
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ---- Delete Modal ----
+function openDeleteModal(batchId, filename) {
+  deleteBatchId = batchId;
+  document.getElementById('deleteModalFile').textContent = filename;
+  document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+  deleteBatchId = null;
+  document.getElementById('deleteModal').classList.add('hidden');
+}
+
+async function confirmDelete() {
+  if (!deleteBatchId) return;
+  const btn = document.getElementById('btnConfirmDelete');
+  btn.disabled = true;
+  btn.textContent = 'กำลังลบ...';
+
+  const { error } = await CAD.supabase
+    .from('upload_batches')
+    .delete()
+    .eq('id', deleteBatchId);
+
+  if (error) {
+    showToast('เกิดข้อผิดพลาดในการลบ: ' + error.message, 'error');
+  } else {
+    showToast('ลบข้อมูลสำเร็จ', 'success');
+    closeDeleteModal();
+    await loadHistory();
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'ลบข้อมูล';
+}
+
+// ---- Helpers ----
+function formatFileSize(bytes) {
+  if (bytes >= 1024*1024) return (bytes/1024/1024).toFixed(2) + ' MB';
+  if (bytes >= 1024) return (bytes/1024).toFixed(1) + ' KB';
+  return bytes + ' B';
+}
+
+function formatThaiDate(dateStr) {
+  try {
+    return new Date(dateStr).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch { return dateStr; }
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${type === 'success' ? '<polyline points="20 6 9 17 4 12"/>' : type === 'error' ? '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>'}</svg>${msg}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+const overlayStyle = document.createElement('style');
+overlayStyle.textContent = `.sidebar-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99; }`;
+document.head.appendChild(overlayStyle);
+</script>
+</body>
+</html>

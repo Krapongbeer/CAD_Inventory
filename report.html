@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>รายงานผู้บริหาร — ระบบครุภัณฑ์ กองบริหารงานกลาง มช.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* Report-specific styles */
+    .report-header-print {
+      display: none;
+    }
+    @media print {
+      .sidebar, .topbar, .no-print, .toast-container { display: none !important; }
+      .main-content { margin-left: 0 !important; }
+      .page-content { padding: 0 !important; }
+      .report-header-print { display: block !important; }
+      .section-card { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; }
+      body { font-size: 11pt; }
+      .kpi-card { break-inside: avoid; }
+      .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; }
+    }
+
+    .report-summary-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .report-summary-table th, .report-summary-table td {
+      padding: 0.625rem 0.875rem;
+      border: 1px solid var(--gray-200);
+      text-align: left;
+    }
+    .report-summary-table th {
+      background: var(--cmu-purple-pale);
+      color: var(--cmu-purple-dark);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .report-summary-table tr:nth-child(even) td { background: var(--gray-50); }
+
+    .recommendation-card {
+      border-radius: var(--border-radius);
+      padding: 1.125rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .rec-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="assets/images/cmu_logo_official.png" alt="มหาวิทยาลัยเชียงใหม่" class="sidebar-logo-banner" />
+      <span class="sidebar-brand-sub">กองบริหารงานกลาง · สำนักงานมหาวิทยาลัย</span>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">เมนูหลัก</span>
+      <a href="dashboard.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        ภาพรวม Dashboard
+      </a>
+      <a href="inventory.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        รายการครุภัณฑ์
+      </a>
+      <a href="report.html" class="nav-link active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        รายงานผู้บริหาร
+      </a>
+      <span class="nav-section-label nav-admin-label" style="display:none">จัดการระบบ</span>
+      <a href="upload.html" class="nav-link nav-admin" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        อัปโหลดข้อมูล
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-info">
+          <div class="user-name truncate" id="navUserName">กำลังโหลด...</div>
+          <div class="user-role-badge" id="navUserRole"></div>
+        </div>
+        <button class="btn-signout" onclick="signOut()" aria-label="ออกจากระบบ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar no-print">
+      <div class="topbar-left">
+        <button class="btn-menu-toggle btn-icon" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="page-title-group">
+          <h1 class="page-title">รายงานสรุปสำหรับผู้บริหาร</h1>
+          <p class="page-subtitle" id="reportDateLabel">ประจำปี พ.ศ. —</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-secondary btn-sm no-print" onclick="exportExcelReport()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Export Excel
+        </button>
+        <button class="btn btn-primary btn-sm no-print" onclick="window.print()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          พิมพ์ / บันทึก PDF
+        </button>
+      </div>
+    </header>
+
+    <main class="page-content" id="pageContent">
+
+      <div id="loadingState" class="page-loader"><div class="loader-ring"></div><p>กำลังสร้างรายงาน...</p></div>
+
+      <div id="reportContent" class="hidden">
+
+        <!-- Print Header (only shows when printing) -->
+        <div class="report-header-print" style="text-align:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:2px solid #4A1E8A;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:0.5rem;">
+            <img src="assets/images/cmu_logo.jpg" style="width:60px;height:60px;border-radius:50%;" alt="มช." />
+            <div style="text-align:left;">
+              <div style="font-size:1.1rem;font-weight:700;color:#2D0F5C;">รายงานสรุปสถานการณ์ครุภัณฑ์</div>
+              <div style="font-size:0.9rem;color:#503E80;">กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
+              <div style="font-size:0.8rem;color:#888;" id="printDate"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI Summary -->
+        <div class="kpi-grid" id="reportKPIGrid"></div>
+
+        <!-- Department Summary Table -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h2 class="section-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 3v18"/></svg>
+              สรุปครุภัณฑ์แยกตามงาน
+            </h2>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <table class="report-summary-table" id="deptTable" aria-label="สรุปครุภัณฑ์แยกตามงาน">
+              <thead>
+                <tr>
+                  <th>งาน</th>
+                  <th>จำนวน (รายการ)</th>
+                  <th>มูลค่ารวม (บาท)</th>
+                  <th>สภาพดี</th>
+                  <th>ปานกลาง</th>
+                  <th>ชำรุด</th>
+                  <th>เกินอายุ</th>
+                </tr>
+              </thead>
+              <tbody id="deptTableBody"></tbody>
+              <tfoot id="deptTableFoot" style="font-weight:700;background:var(--cmu-purple-pale);"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+          <div class="section-card">
+            <div class="section-card-header">
+              <h2 class="section-card-title">สัดส่วนสภาพครุภัณฑ์</h2>
+            </div>
+            <div class="section-card-body">
+              <div class="chart-wrap" style="height:250px;">
+                <canvas id="reportChartCondition"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="section-card">
+            <div class="section-card-header">
+              <h2 class="section-card-title">สถานะอายุการใช้งาน</h2>
+            </div>
+            <div class="section-card-body">
+              <div class="chart-wrap" style="height:250px;">
+                <canvas id="reportChartAge"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h2 class="section-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+              ข้อเสนอแนะเพื่อการตัดสินใจ
+            </h2>
+          </div>
+          <div class="section-card-body" style="display:flex;flex-direction:column;gap:0.875rem;" id="recommendationsBody"></div>
+        </div>
+
+        <!-- Critical Assets Table -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h2 class="section-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              รายการที่ต้องพิจารณาจำหน่าย/ทดแทน
+            </h2>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <table class="report-summary-table" id="criticalTable" aria-label="รายการที่ต้องพิจารณาจำหน่าย">
+              <thead>
+                <tr>
+                  <th>ชื่อครุภัณฑ์</th>
+                  <th>คีย์สินทรัพย์</th>
+                  <th>งาน</th>
+                  <th>สภาพ</th>
+                  <th>อายุ</th>
+                  <th>ราคาทุน (บาท)</th>
+                  <th>ผู้ดูแล</th>
+                  <th>ข้อแนะนำ</th>
+                </tr>
+              </thead>
+              <tbody id="criticalTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+// ============================================================
+// Report Page Logic
+// ============================================================
+
+let allAssets = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await requireAuth(['admin', 'staff', 'executive']);
+  if (!user) return;
+  if (user.role === 'admin') {
+    document.querySelector('.nav-admin-label').style.display = '';
+    document.querySelectorAll('.nav-admin').forEach(el => el.style.display = '');
+  }
+  await populateNavUser();
+  const nameEl = document.getElementById('navUserName');
+  const avatarEl = document.getElementById('userAvatar');
+  if (avatarEl && nameEl) avatarEl.textContent = (nameEl.textContent || '?').charAt(0).toUpperCase();
+  await loadReport();
+});
+
+async function loadReport() {
+  const { data, error } = await CAD.supabase.from('assets').select('*');
+  if (error || !data || !data.length) {
+    document.getElementById('loadingState').innerHTML = `<p style="color:var(--gray-400);">ยังไม่มีข้อมูล กรุณาอัปโหลดไฟล์ Excel ก่อน</p>`;
+    return;
+  }
+
+  allAssets = data;
+
+  const now = new Date();
+  document.getElementById('reportDateLabel').textContent = `ข้อมูล ณ วันที่ ${now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+  document.getElementById('printDate').textContent = `จัดทำ ณ วันที่ ${now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+
+  renderReportKPIs(allAssets);
+  renderDeptTable(allAssets);
+  renderReportCharts(allAssets);
+  renderRecommendations(allAssets);
+  renderCriticalTable(allAssets);
+
+  document.getElementById('loadingState').classList.add('hidden');
+  document.getElementById('reportContent').classList.remove('hidden');
+}
+
+// ---- KPIs ----
+function renderReportKPIs(assets) {
+  const total = assets.length;
+  const totalValue = assets.reduce((s,a) => s+(a.cost||0), 0);
+  const byCondition = { 'ดี': 0, 'ปานกลาง': 0, 'ชำรุด': 0 };
+  assets.forEach(a => { if (a.condition && byCondition[a.condition] !== undefined) byCondition[a.condition]++; });
+
+  let critical = 0, warning = 0;
+  assets.forEach(a => {
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    if (status === 'critical') critical++;
+    else if (status === 'warning') warning++;
+  });
+
+  const kpis = [
+    { label: 'ครุภัณฑ์ทั้งหมด', value: total.toLocaleString(), sub: 'รายการ', color: 'purple', icon: '📦' },
+    { label: 'มูลค่ารวม', value: (totalValue/1000000).toFixed(2) + ' ล้าน', sub: 'บาท', color: 'gold', icon: '💰' },
+    { label: 'สภาพดี', value: byCondition['ดี'].toLocaleString(), sub: Math.round(byCondition['ดี']/total*100)+'%', color: 'green', icon: '✅' },
+    { label: 'ชำรุด', value: byCondition['ชำรุด'].toLocaleString(), sub: 'ต้องซ่อม/จำหน่าย', color: 'red', icon: '⚠️', type: 'kpi-danger' },
+    { label: 'เกินอายุกำหนด', value: critical.toLocaleString(), sub: `ใกล้ครบ ${warning}`, color: 'amber', icon: '⏰', type: 'kpi-warning' },
+    { label: 'มูลค่าเฉลี่ย', value: Math.round(totalValue/total).toLocaleString(), sub: 'บาท/รายการ', color: 'blue', icon: '📊' },
+  ];
+
+  document.getElementById('reportKPIGrid').innerHTML = kpis.map(k => `
+    <div class="kpi-card ${k.type||''}">
+      <div class="kpi-top">
+        <span class="kpi-label">${k.label}</span>
+        <div class="kpi-icon ${k.color}" style="font-size:1.25rem;">${k.icon}</div>
+      </div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-footer">${k.sub}</div>
+    </div>
+  `).join('');
+}
+
+// ---- Dept Table ----
+function renderDeptTable(assets) {
+  const depts = {};
+  assets.forEach(a => {
+    const d = a.department || 'ไม่ระบุ';
+    if (!depts[d]) depts[d] = { count: 0, value: 0, good: 0, medium: 0, damaged: 0, critical: 0 };
+    depts[d].count++;
+    depts[d].value += (a.cost || 0);
+    if (a.condition === 'ดี') depts[d].good++;
+    else if (a.condition === 'ปานกลาง') depts[d].medium++;
+    else if (a.condition === 'ชำรุด') depts[d].damaged++;
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    if (status === 'critical') depts[d].critical++;
+  });
+
+  const sorted = Object.entries(depts).sort((a,b) => b[1].count - a[1].count);
+  document.getElementById('deptTableBody').innerHTML = sorted.map(([name, d]) => `
+    <tr>
+      <td><strong>${escHtml(name)}</strong></td>
+      <td style="text-align:right;">${d.count.toLocaleString()}</td>
+      <td style="text-align:right;">${d.value.toLocaleString()}</td>
+      <td style="text-align:center;color:var(--color-success);">${d.good}</td>
+      <td style="text-align:center;color:var(--color-warning);">${d.medium}</td>
+      <td style="text-align:center;color:var(--color-danger);">${d.damaged || '—'}</td>
+      <td style="text-align:center;color:var(--color-danger);font-weight:600;">${d.critical || '—'}</td>
+    </tr>
+  `).join('');
+
+  const totals = sorted.reduce((acc,[,d]) => {
+    acc.count += d.count; acc.value += d.value;
+    acc.good += d.good; acc.medium += d.medium;
+    acc.damaged += d.damaged; acc.critical += d.critical;
+    return acc;
+  }, {count:0,value:0,good:0,medium:0,damaged:0,critical:0});
+
+  document.getElementById('deptTableFoot').innerHTML = `
+    <tr>
+      <td>รวมทั้งหมด</td>
+      <td style="text-align:right;">${totals.count.toLocaleString()}</td>
+      <td style="text-align:right;">${totals.value.toLocaleString()}</td>
+      <td style="text-align:center;">${totals.good}</td>
+      <td style="text-align:center;">${totals.medium}</td>
+      <td style="text-align:center;">${totals.damaged || '—'}</td>
+      <td style="text-align:center;">${totals.critical || '—'}</td>
+    </tr>
+  `;
+}
+
+// ---- Charts ----
+function renderReportCharts(assets) {
+  const condCounts = { 'ดี': 0, 'ปานกลาง': 0, 'ชำรุด': 0 };
+  let normal = 0, warning = 0, critical = 0;
+  assets.forEach(a => {
+    if (a.condition && condCounts[a.condition] !== undefined) condCounts[a.condition]++;
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    if (status === 'normal') normal++;
+    else if (status === 'warning') warning++;
+    else if (status === 'critical') critical++;
+  });
+
+  new Chart(document.getElementById('reportChartCondition'), {
+    type: 'doughnut',
+    data: {
+      labels: ['ดี','ปานกลาง','ชำรุด'],
+      datasets: [{ data: Object.values(condCounts), backgroundColor: ['#16A34A','#D97706','#DC2626'], borderWidth: 3, borderColor: '#fff' }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { font: { family: 'Sarabun' } } } } }
+  });
+
+  new Chart(document.getElementById('reportChartAge'), {
+    type: 'doughnut',
+    data: {
+      labels: ['ปกติ','ใกล้ครบกำหนด','เกินกำหนด'],
+      datasets: [{ data: [normal, warning, critical], backgroundColor: ['#16A34A','#D97706','#DC2626'], borderWidth: 3, borderColor: '#fff' }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { font: { family: 'Sarabun' } } } } }
+  });
+}
+
+// ---- Recommendations ----
+function renderRecommendations(assets) {
+  const damaged = assets.filter(a => a.condition === 'ชำรุด').length;
+  let critical = 0, warning = 0;
+  assets.forEach(a => {
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    if (status === 'critical') critical++;
+    else if (status === 'warning') warning++;
+  });
+  const totalValue = assets.reduce((s,a) => s+(a.cost||0), 0);
+
+  const recs = [];
+
+  if (damaged > 0) {
+    recs.push({
+      icon: '🔧', bg: 'var(--color-danger-bg)', color: 'var(--color-danger)',
+      title: `พิจารณาซ่อมแซมหรือจำหน่ายครุภัณฑ์ชำรุด ${damaged} รายการ`,
+      detail: `ครุภัณฑ์ที่อยู่ในสภาพชำรุดควรได้รับการตรวจสอบโดยเร็ว เพื่อพิจารณาว่าคุ้มค่าแก่การซ่อม หรือควรดำเนินการจำหน่ายตามระเบียบกรมบัญชีกลาง`
+    });
+  }
+
+  if (critical > 0) {
+    recs.push({
+      icon: '⏰', bg: 'var(--color-warning-bg)', color: 'var(--color-warning)',
+      title: `วางแผนจัดซื้อทดแทนครุภัณฑ์เกินอายุ ${critical} รายการ`,
+      detail: `ครุภัณฑ์ที่ใช้งานเกินอายุกำหนด (ตามเกณฑ์กรมบัญชีกลาง) ควรได้รับการบรรจุในแผนงบประมาณปีถัดไป เพื่อจัดหาทดแทนตามระเบียบการจัดซื้อจัดจ้าง`
+    });
+  }
+
+  if (warning > 0) {
+    recs.push({
+      icon: '📋', bg: 'var(--color-info-bg)', color: 'var(--color-info)',
+      title: `เตรียมสำรวจสภาพครุภัณฑ์ที่ใกล้ครบอายุ ${warning} รายการ`,
+      detail: `ควรสำรวจสภาพและประเมินความจำเป็นในการใช้งาน เพื่อประกอบการพิจารณาขอรับงบประมาณในปีต่อไป`
+    });
+  }
+
+  const medCount = assets.filter(a => a.condition === 'ปานกลาง').length;
+  if (medCount > 0) {
+    recs.push({
+      icon: '🛡️', bg: var_cmu_pale(), color: 'var(--cmu-purple)',
+      title: `ดูแลบำรุงรักษาครุภัณฑ์สภาพปานกลาง ${medCount} รายการ`,
+      detail: `ครุภัณฑ์ที่อยู่ในสภาพปานกลางควรได้รับการบำรุงรักษาเชิงป้องกัน เพื่อยืดอายุการใช้งานและลดค่าใช้จ่ายในการจัดซื้อใหม่`
+    });
+  }
+
+  recs.push({
+    icon: '💡', bg: '#FEF9C3', color: '#92400E',
+    title: `มูลค่าครุภัณฑ์รวม ${(totalValue/1000000).toFixed(2)} ล้านบาท ควรปรับปรุงทะเบียนให้ครบถ้วน`,
+    detail: `การบันทึกข้อมูลครุภัณฑ์ให้ครบถ้วนและเป็นปัจจุบัน จะช่วยให้การตรวจสอบพัสดุประจำปีเป็นไปอย่างมีประสิทธิภาพ ตามระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. 2560`
+  });
+
+  document.getElementById('recommendationsBody').innerHTML = recs.map(r => `
+    <div class="recommendation-card" style="background:${r.bg};">
+      <div class="rec-icon" style="background:rgba(255,255,255,0.7);font-size:1.25rem;">${r.icon}</div>
+      <div>
+        <div style="font-weight:700;color:${r.color};margin-bottom:0.3rem;">${r.title}</div>
+        <div style="font-size:0.85rem;color:var(--gray-600);line-height:1.6;">${r.detail}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function var_cmu_pale() { return 'var(--cmu-purple-pale)'; }
+
+// ---- Critical Table ----
+function renderCriticalTable(assets) {
+  const criticals = assets.filter(a => {
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    return a.condition === 'ชำรุด' || status === 'critical';
+  }).sort((a,b) => {
+    const { ageYears: ay } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { ageYears: by } = CAD.getAssetAgeStatus(b.registered_date, b.name);
+    return by - ay;
+  }).slice(0, 30);
+
+  document.getElementById('criticalTableBody').innerHTML = criticals.map(a => {
+    const { status, label } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const isVeryOld = status === 'critical';
+    const isBroken = a.condition === 'ชำรุด';
+    const rec = isBroken && isVeryOld ? 'จำหน่าย' : isBroken ? 'ซ่อม/จำหน่าย' : 'ทดแทน';
+    const recColor = isBroken ? 'var(--color-danger)' : 'var(--color-warning)';
+    return `
+      <tr>
+        <td><strong>${escHtml(a.name || '-')}</strong></td>
+        <td style="font-family:monospace;font-size:0.7rem;">${escHtml(a.asset_key || '-')}</td>
+        <td>${escHtml(a.department || '-')}</td>
+        <td><span class="badge ${a.condition==='ชำรุด'?'badge-damaged':a.condition==='ดี'?'badge-good':'badge-medium'}">${escHtml(a.condition||'-')}</span></td>
+        <td>${label}</td>
+        <td style="text-align:right;">${a.cost ? a.cost.toLocaleString() : '-'}</td>
+        <td style="font-size:0.8rem;">${escHtml(a.assignee || a.owner || '-')}</td>
+        <td><strong style="color:${recColor};">${rec}</strong></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ---- Export Excel ----
+function exportExcelReport() {
+  if (!allAssets.length) return;
+
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Summary
+  const deptData = {};
+  allAssets.forEach(a => {
+    const d = a.department || 'ไม่ระบุ';
+    if (!deptData[d]) deptData[d] = { count:0, value:0, good:0, medium:0, damaged:0, critical:0 };
+    deptData[d].count++;
+    deptData[d].value += (a.cost||0);
+    if (a.condition === 'ดี') deptData[d].good++;
+    else if (a.condition === 'ปานกลาง') deptData[d].medium++;
+    else if (a.condition === 'ชำรุด') deptData[d].damaged++;
+    const {status} = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    if (status === 'critical') deptData[d].critical++;
+  });
+
+  const summaryHeaders = ['งาน','จำนวน (รายการ)','มูลค่ารวม (บาท)','สภาพดี','ปานกลาง','ชำรุด','เกินอายุกำหนด'];
+  const summaryRows = Object.entries(deptData).map(([d, v]) => [d, v.count, v.value, v.good, v.medium, v.damaged, v.critical]);
+
+  const ws1 = XLSX.utils.aoa_to_sheet([
+    [`รายงานสรุปครุภัณฑ์ กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่`],
+    [`ข้อมูล ณ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}`],
+    [],
+    summaryHeaders,
+    ...summaryRows
+  ]);
+  XLSX.utils.book_append_sheet(wb, ws1, 'สรุปรายงาน');
+
+  // Sheet 2: All Data
+  const allHeaders = ['ID','คีย์สินทรัพย์','ชื่อ','งาน','สภาพ','วันที่ขึ้นทะเบียน','อายุ (ปี)','สถานะอายุ','ราคา (บาท)','อาคาร','ชั้น','ห้อง','ผู้ดูแล'];
+  const allRows = allAssets.map(a => {
+    const { ageYears, status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const statusLabel = status === 'normal' ? 'ปกติ' : status === 'warning' ? 'ใกล้ครบกำหนด' : status === 'critical' ? 'เกินกำหนด' : 'ไม่ทราบ';
+    return [a.id, a.asset_key, a.name, a.department, a.condition, a.registered_date, ageYears, statusLabel, a.cost, a.building, a.floor, a.room, a.assignee || a.owner];
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet([allHeaders, ...allRows]);
+  XLSX.utils.book_append_sheet(wb, ws2, 'รายการครุภัณฑ์');
+
+  XLSX.writeFile(wb, `รายงานครุภัณฑ์_กองบริหารงานกลาง_${new Date().toLocaleDateString('th-TH')}.xlsx`);
+  showToast('Export Excel สำเร็จ', 'success');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type='info') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+const overlayStyle = document.createElement('style');
+overlayStyle.textContent = `.sidebar-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99; }`;
+document.head.appendChild(overlayStyle);
+</script>
+</body>
+</html>

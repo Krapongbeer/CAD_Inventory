@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>รายการครุภัณฑ์ — ระบบครุภัณฑ์ กองบริหารงานกลาง มช.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="assets/images/cmu_logo_official.png" alt="มหาวิทยาลัยเชียงใหม่" class="sidebar-logo-banner" />
+      <span class="sidebar-brand-sub">กองบริหารงานกลาง · สำนักงานมหาวิทยาลัย</span>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">เมนูหลัก</span>
+      <a href="dashboard.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        ภาพรวม Dashboard
+      </a>
+      <a href="inventory.html" class="nav-link active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        รายการครุภัณฑ์
+      </a>
+      <a href="report.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        รายงานผู้บริหาร
+      </a>
+      <span class="nav-section-label nav-admin-label" style="display:none">จัดการระบบ</span>
+      <a href="upload.html" class="nav-link nav-admin" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        อัปโหลดข้อมูล
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-info">
+          <div class="user-name truncate" id="navUserName">กำลังโหลด...</div>
+          <div class="user-role-badge" id="navUserRole"></div>
+        </div>
+        <button class="btn-signout" onclick="signOut()" aria-label="ออกจากระบบ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-menu-toggle btn-icon" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="page-title-group">
+          <h1 class="page-title">รายการครุภัณฑ์</h1>
+          <p class="page-subtitle" id="totalLabel">ทั้งหมด — รายการ</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-secondary btn-sm" id="btnExportExcel" onclick="exportExcel()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Export Excel
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btnExportPDF" onclick="exportPDF()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Export PDF
+        </button>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <span class="filter-label">กรอง:</span>
+        <select id="filterDept" class="filter-select" onchange="applyFilters()">
+          <option value="">งานทั้งหมด</option>
+        </select>
+        <select id="filterCondition" class="filter-select" onchange="applyFilters()">
+          <option value="">สภาพทั้งหมด</option>
+          <option value="ดี">ดี</option>
+          <option value="ปานกลาง">ปานกลาง</option>
+          <option value="ชำรุด">ชำรุด</option>
+        </select>
+        <select id="filterAge" class="filter-select" onchange="applyFilters()">
+          <option value="">อายุทุกช่วง</option>
+          <option value="normal">ปกติ</option>
+          <option value="warning">ใกล้ครบกำหนด</option>
+          <option value="critical">เกินกำหนด</option>
+        </select>
+        <select id="filterBuilding" class="filter-select" onchange="applyFilters()">
+          <option value="">อาคารทั้งหมด</option>
+        </select>
+        <div class="filter-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="filterSearch" type="search" placeholder="ค้นหาชื่อ, คีย์, ผู้ดูแล..." oninput="applyFilters()" />
+        </div>
+        <button class="btn-filter-reset" onclick="resetFilters()">ล้าง</button>
+      </div>
+
+      <!-- Table -->
+      <div class="section-card">
+        <div class="section-card-body" style="padding:0;">
+
+          <!-- Loading -->
+          <div id="loadingState" class="page-loader"><div class="loader-ring"></div><p>กำลังโหลด...</p></div>
+
+          <!-- Table -->
+          <div id="tableWrap" class="table-wrap hidden">
+            <table class="data-table" id="mainTable" aria-label="รายการครุภัณฑ์ทั้งหมด">
+              <thead>
+                <tr>
+                  <th onclick="sortBy('id')" title="เรียงตาม ID">ID ↕</th>
+                  <th onclick="sortBy('asset_key')">คีย์สินทรัพย์ ↕</th>
+                  <th onclick="sortBy('name')">ชื่อครุภัณฑ์ ↕</th>
+                  <th onclick="sortBy('department')">งาน ↕</th>
+                  <th onclick="sortBy('condition')">สภาพ ↕</th>
+                  <th onclick="sortBy('registered_date')">วันที่ขึ้นทะเบียน ↕</th>
+                  <th>อายุการใช้งาน</th>
+                  <th onclick="sortBy('cost')">ราคา (บาท) ↕</th>
+                  <th onclick="sortBy('building')">อาคาร ↕</th>
+                  <th>ผู้ดูแล</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination" id="paginationWrap">
+            <span class="pagination-info" id="paginationInfo"></span>
+            <div class="pagination-controls" id="paginationControls"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="detailModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="detailModalTitle">รายละเอียดครุภัณฑ์</h3>
+      <button class="btn-modal-close" onclick="closeDetailModal()" aria-label="ปิด">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="detailModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDetailModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+// ============================================================
+// Inventory Page Logic
+// ============================================================
+
+let allAssets = [];
+let filteredAssets = [];
+let sortKey = 'id';
+let sortDir = 'asc';
+let currentPage = 1;
+const PAGE_SIZE = 20;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = await requireAuth(['admin', 'staff', 'executive']);
+  if (!user) return;
+  if (user.role === 'admin') {
+    document.querySelector('.nav-admin-label').style.display = '';
+    document.querySelectorAll('.nav-admin').forEach(el => el.style.display = '');
+  }
+  await populateNavUser();
+  const nameEl = document.getElementById('navUserName');
+  const avatarEl = document.getElementById('userAvatar');
+  if (avatarEl && nameEl) avatarEl.textContent = (nameEl.textContent || '?').charAt(0).toUpperCase();
+  await loadAssets();
+});
+
+async function loadAssets() {
+  showLoading(true);
+  const { data, error } = await CAD.supabase
+    .from('assets')
+    .select('*')
+    .order('id', { ascending: true });
+
+  if (error || !data) {
+    showLoading(false);
+    return;
+  }
+  allAssets = data;
+  filteredAssets = [...allAssets];
+  populateFilters(allAssets);
+  renderTable();
+  showLoading(false);
+}
+
+// ---- Filters ----
+function populateFilters(assets) {
+  const depts = [...new Set(assets.map(a => a.department).filter(Boolean))].sort();
+  const buildings = [...new Set(assets.map(a => normalizeBuilding(a.building)).filter(Boolean))].sort();
+
+  const deptSel = document.getElementById('filterDept');
+  depts.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; deptSel.appendChild(o); });
+
+  const bldSel = document.getElementById('filterBuilding');
+  buildings.slice(0, 20).forEach(b => { const o = document.createElement('option'); o.value = b; o.textContent = b; bldSel.appendChild(o); });
+}
+
+function normalizeBuilding(b) {
+  if (!b) return null;
+  return b.trim().replace(/\s+/g, ' ')
+    .replace('สำนักงานมหาวิทยาลัย 1', 'อาคารสำนักงานมหาวิทยาลัย 1')
+    .replace('อาคารสำนักงานมหาวิทยาลัย1', 'อาคารสำนักงานมหาวิทยาลัย 1');
+}
+
+function applyFilters() {
+  const dept = document.getElementById('filterDept').value;
+  const condition = document.getElementById('filterCondition').value;
+  const age = document.getElementById('filterAge').value;
+  const building = document.getElementById('filterBuilding').value;
+  const search = document.getElementById('filterSearch').value.toLowerCase().trim();
+
+  filteredAssets = allAssets.filter(a => {
+    if (dept && a.department !== dept) return false;
+    if (condition && a.condition !== condition) return false;
+    if (building && normalizeBuilding(a.building) !== building) return false;
+    if (age) {
+      const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+      if (status !== age) return false;
+    }
+    if (search && !(
+      (a.name || '').toLowerCase().includes(search) ||
+      (a.asset_key || '').toLowerCase().includes(search) ||
+      (a.assignee || '').toLowerCase().includes(search) ||
+      (a.owner || '').toLowerCase().includes(search) ||
+      (a.description_sys || '').toLowerCase().includes(search)
+    )) return false;
+    return true;
+  });
+
+  currentPage = 1;
+  renderTable();
+}
+
+function resetFilters() {
+  document.getElementById('filterDept').value = '';
+  document.getElementById('filterCondition').value = '';
+  document.getElementById('filterAge').value = '';
+  document.getElementById('filterBuilding').value = '';
+  document.getElementById('filterSearch').value = '';
+  filteredAssets = [...allAssets];
+  currentPage = 1;
+  renderTable();
+}
+
+// ---- Sort ----
+function sortBy(key) {
+  if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortKey = key; sortDir = 'asc'; }
+  renderTable();
+}
+
+// ---- Render Table ----
+function renderTable() {
+  // Sort
+  const sorted = [...filteredAssets].sort((a, b) => {
+    let va = a[sortKey] ?? '';
+    let vb = b[sortKey] ?? '';
+    if (typeof va === 'number' && typeof vb === 'number') return sortDir === 'asc' ? va - vb : vb - va;
+    return sortDir === 'asc' ? String(va).localeCompare(String(vb), 'th') : String(vb).localeCompare(String(va), 'th');
+  });
+
+  // Paginate
+  const total = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  currentPage = Math.min(currentPage, totalPages);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = sorted.slice(start, start + PAGE_SIZE);
+
+  document.getElementById('totalLabel').textContent = `ทั้งหมด ${total.toLocaleString()} รายการ`;
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = pageItems.map(a => {
+    const { status, label } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const condBadge = getConditionBadge(a.condition);
+    const ageBadge = `<span class="badge age-badge-${status}" style="cursor:pointer;">${label}</span>`;
+    const dateFormatted = formatDate(a.registered_date);
+    return `
+      <tr onclick="openDetail(${JSON.stringify(a).replace(/"/g,'&quot;')})" style="cursor:pointer;">
+        <td style="font-size:0.75rem;color:var(--gray-400);">${a.id || '-'}</td>
+        <td style="font-family:monospace;font-size:0.7rem;color:var(--gray-500);">${escHtml(a.asset_key || '-')}</td>
+        <td><strong style="color:var(--gray-800);">${escHtml(a.name || '-')}</strong><br/><span style="font-size:0.7rem;color:var(--gray-400);">${escHtml((a.brand || '') + (a.model ? ' ' + a.model : ''))}</span></td>
+        <td style="font-size:0.85rem;">${escHtml(shortenDeptName(a.department || '-'))}</td>
+        <td>${condBadge}</td>
+        <td style="font-size:0.85rem;white-space:nowrap;">${dateFormatted}</td>
+        <td>${ageBadge}</td>
+        <td style="text-align:right;font-size:0.85rem;">${a.cost ? a.cost.toLocaleString() : '-'}</td>
+        <td style="font-size:0.8rem;color:var(--gray-600);">${escHtml((a.building || '-').slice(0,20))}${(a.building || '').length > 20 ? '…' : ''}</td>
+        <td style="font-size:0.82rem;">${escHtml(a.assignee || a.owner || '-')}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // Pagination
+  document.getElementById('paginationInfo').textContent =
+    `แสดง ${start+1}–${Math.min(start+PAGE_SIZE, total)} จาก ${total.toLocaleString()} รายการ`;
+
+  const controls = document.getElementById('paginationControls');
+  let pageBtns = `<button class="btn-page" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+
+  const range = getPageRange(currentPage, totalPages);
+  range.forEach(p => {
+    if (p === '…') pageBtns += `<span class="btn-page" style="cursor:default;">…</span>`;
+    else pageBtns += `<button class="btn-page ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  });
+
+  pageBtns += `<button class="btn-page" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+  controls.innerHTML = pageBtns;
+}
+
+function goPage(p) {
+  const total = Math.ceil(filteredAssets.length / PAGE_SIZE);
+  if (p < 1 || p > total) return;
+  currentPage = p;
+  renderTable();
+  document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function getPageRange(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i+1);
+  if (current <= 4) return [1,2,3,4,5,'…',total];
+  if (current >= total-3) return [1,'…',total-4,total-3,total-2,total-1,total];
+  return [1,'…',current-1,current,current+1,'…',total];
+}
+
+// ---- Detail Modal ----
+function openDetail(asset) {
+  document.getElementById('detailModalTitle').textContent = asset.name || 'รายละเอียดครุภัณฑ์';
+  const { status, label } = CAD.getAssetAgeStatus(asset.registered_date, asset.name);
+
+  const rows = [
+    ['ID', asset.id],
+    ['คีย์สินทรัพย์', asset.asset_key],
+    ['วันที่ขึ้นทะเบียน', formatDate(asset.registered_date)],
+    ['ราคาทุน', asset.cost ? asset.cost.toLocaleString() + ' บาท' : '-'],
+    ['ยี่ห้อ/รุ่น', [asset.brand, asset.model].filter(Boolean).join(' ') || '-'],
+    ['ซีเรียลนัมเบอร์', asset.serial_number],
+    ['การรับประกัน', asset.warranty_years ? asset.warranty_years + ' ปี' : '-'],
+    ['งาน', asset.department],
+    ['สภาพ', asset.condition],
+    ['อายุการใช้งาน', label],
+    ['อาคาร', asset.building],
+    ['ชั้น', asset.floor],
+    ['ห้อง', asset.room],
+    ['รายละเอียดการจัดเก็บ', asset.storage_detail],
+    ['ผู้ครอบครอง', asset.owner],
+    ['ผู้ดูแล', asset.assignee],
+    ['หมายเหตุ', asset.note],
+  ];
+
+  document.getElementById('detailModalBody').innerHTML = `
+    <div class="flex flex-col gap-3">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        ${rows.map(([k,v]) => v ? `
+          <div style="padding:0.625rem;background:var(--gray-50);border-radius:var(--border-radius-sm);">
+            <div style="font-size:0.7rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.2rem;">${k}</div>
+            <div style="font-size:0.875rem;color:var(--gray-700);font-weight:500;">${escHtml(String(v))}</div>
+          </div>
+        ` : '').join('')}
+      </div>
+    </div>
+  `;
+  document.getElementById('detailModal').classList.remove('hidden');
+}
+
+function closeDetailModal() {
+  document.getElementById('detailModal').classList.add('hidden');
+}
+
+// ---- Export ----
+function exportExcel() {
+  if (!filteredAssets.length) { showToast('ไม่มีข้อมูลที่จะ Export', 'error'); return; }
+
+  const headers = ['ID','คีย์สินทรัพย์','วันที่ขึ้นทะเบียน','ชื่อ','คำอธิบาย','ยี่ห้อ','รุ่น','ซีเรียล','การรับประกัน (ปี)','งาน','สภาพ','อาคาร','ชั้น','ห้อง','ผู้ครอบครอง','ผู้ดูแล','ราคา (บาท)','อายุ (ปี)','หมายเหตุ'];
+  const rows = filteredAssets.map(a => {
+    const { ageYears } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    return [a.id, a.asset_key, a.registered_date, a.name, a.detail, a.brand, a.model, a.serial_number, a.warranty_years, a.department, a.condition, a.building, a.floor, a.room, a.owner, a.assignee, a.cost, ageYears, a.note];
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws['!cols'] = headers.map(() => ({ wch: 20 }));
+  XLSX.utils.book_append_sheet(wb, ws, 'ครุภัณฑ์');
+  XLSX.writeFile(wb, `รายการครุภัณฑ์_กองบริหารงานกลาง_${new Date().toLocaleDateString('th-TH')}.xlsx`);
+  showToast('Export Excel สำเร็จ', 'success');
+}
+
+function exportPDF() {
+  window.print();
+}
+
+// ---- Helpers ----
+function showLoading(show) {
+  document.getElementById('loadingState').classList.toggle('hidden', !show);
+  document.getElementById('tableWrap').classList.toggle('hidden', show);
+  document.getElementById('paginationWrap').classList.toggle('hidden', show);
+}
+
+function formatDate(d) {
+  if (!d) return '-';
+  try { return new Date(d).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }); }
+  catch { return d; }
+}
+
+function shortenDeptName(name) {
+  return name
+    .replace('งานสารบรรณและธุรการ', 'สารบรรณฯ')
+    .replace('งานประชุมและพิธีการ', 'ประชุมฯ')
+    .replace('งานบริการกลาง', 'บริการกลาง')
+    .replace('งานศูนย์ประสานงานมหาวิทยาลัย (กรุงเทพมหานคร)', 'ศูนย์ประสานงาน กทม.')
+    .replace('ส่วนกลาง', 'ส่วนกลาง');
+}
+
+function getConditionBadge(c) {
+  const map = {'ดี':'badge-good','ปานกลาง':'badge-medium','ชำรุด':'badge-damaged'};
+  const dot = c==='ดี'?'🟢':c==='ปานกลาง'?'🟡':'🔴';
+  return `<span class="badge ${map[c]||'badge-normal'}">${dot} ${escHtml(c||'-')}</span>`;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+const overlayStyle = document.createElement('style');
+overlayStyle.textContent = `.sidebar-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99; }`;
+document.head.appendChild(overlayStyle);
+</script>
+</body>
+</html>
