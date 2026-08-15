@@ -59,6 +59,7 @@ async function requireAuth(allowedRoles = ['admin', 'staff', 'executive']) {
 
   const userRole = await getCurrentUserRole();
   if (!userRole) {
+    alert('Login Success, but failed to load user role from database. (You may not have a role assigned in user_roles table, or RLS blocked it).');
     window.location.href = 'index.html';
     return null;
   }
