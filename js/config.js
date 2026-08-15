@@ -70,11 +70,22 @@ function getAssetAgeStatus(registeredDate, assetName, assetId) {
       const cleaned = registeredDate.toString().replace(/[\u202d\u202c]/g, '').trim();
       const parts = cleaned.split('-');
       if (parts.length === 3) {
-        let [day, month, year] = parts;
-        year = parseInt(year);
+        let year, month, day;
+        if (parts[0].length >= 4) {
+          // YYYY-MM-DD (e.g. from database)
+          year = parseInt(parts[0]);
+          month = parseInt(parts[1]);
+          day = parseInt(parts[2]);
+        } else {
+          // DD-MM-YYYY (e.g. raw from Excel string)
+          day = parseInt(parts[0]);
+          month = parseInt(parts[1]);
+          year = parseInt(parts[2]);
+        }
+        
         if (year < 100) year += year < 50 ? 2000 : 1900;
         if (year > 2400) year -= 543; // แปลง พ.ศ. เป็น ค.ศ.
-        date = new Date(year, parseInt(month) - 1, parseInt(day));
+        date = new Date(year, month - 1, day);
       } else {
         // บางครั้ง Excel ส่งมาเป็น string ธรรมดา
         const d = new Date(cleaned);
@@ -106,8 +117,8 @@ function getAssetAgeStatus(registeredDate, assetName, assetId) {
     return { ageYears: 0, status: 'unknown', label: 'ไม่ทราบ' };
   }
 
-  const ageMs = Date.now() - date.getTime();
-  const ageYears = ageMs / (1000 * 60 * 60 * 24 * 365.25);
+  let ageYears = ageMs / (1000 * 60 * 60 * 24 * 365.25);
+  if (ageYears < 0) ageYears = 0;
 
   // หาประเภทครุภัณฑ์
   const nameLower = (assetName || '').toLowerCase();
