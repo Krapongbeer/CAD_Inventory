@@ -61,23 +61,42 @@ const ASSET_AGE_THRESHOLDS = {
  * @param {string} assetName - ชื่อครุภัณฑ์
  * @returns {{ ageYears: number, status: 'normal'|'warning'|'critical', label: string }}
  */
-function getAssetAgeStatus(registeredDate, assetName) {
-  if (!registeredDate) return { ageYears: 0, status: 'unknown', label: 'ไม่ทราบ' };
+function getAssetAgeStatus(registeredDate, assetName, assetId) {
+  let date = null;
 
-  // แปลงวันที่
-  let date;
-  try {
-    const cleaned = registeredDate.toString().replace(/[\u202d\u202c]/g, '').trim();
-    const parts = cleaned.split('-');
-    if (parts.length === 3) {
-      let [day, month, year] = parts;
-      year = parseInt(year);
-      if (year < 100) year += year < 50 ? 2000 : 1900;
-      date = new Date(year, parseInt(month) - 1, parseInt(day));
-    } else {
-      date = new Date(cleaned);
+  // 1. ลองแปลงจากวันที่ขึ้นทะเบียน (ถ้ามี)
+  if (registeredDate) {
+    try {
+      const cleaned = registeredDate.toString().replace(/[\u202d\u202c]/g, '').trim();
+      const parts = cleaned.split('-');
+      if (parts.length === 3) {
+        let [day, month, year] = parts;
+        year = parseInt(year);
+        if (year < 100) year += year < 50 ? 2000 : 1900;
+        date = new Date(year, parseInt(month) - 1, parseInt(day));
+      } else {
+        date = new Date(cleaned);
+      }
+      if (isNaN(date.getTime())) date = null;
+    } catch {
+      date = null;
     }
-  } catch {
+  }
+
+  // 2. ถ้าไม่มีวันที่ หรือแปลงไม่ได้ ให้ลองดึงจาก รหัสครุภัณฑ์ (เช่น .ร60 = ปี 2560)
+  if (!date && assetId) {
+    const match = assetId.match(/\.ร(\d{2})/);
+    if (match) {
+      const thaiYearStr = match[1]; // e.g. "60"
+      const thaiYear = 2500 + parseInt(thaiYearStr, 10); // 2560
+      const adYear = thaiYear - 543; // 2017
+      // สมมติให้เป็นวันที่ 1 มกราคม ของปีนั้น
+      date = new Date(adYear, 0, 1);
+    }
+  }
+
+  // 3. ถ้าหาจากทั้งสองอย่างไม่ได้เลย ให้ตีเป็น ไม่ทราบ
+  if (!date) {
     return { ageYears: 0, status: 'unknown', label: 'ไม่ทราบ' };
   }
 

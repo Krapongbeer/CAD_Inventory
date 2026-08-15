@@ -364,7 +364,7 @@ function renderKPIs(assets) {
   // Age analysis
   let normalCount = 0, warningCount = 0, criticalCount = 0;
   assets.forEach(a => {
-    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     if (status === 'normal') normalCount++;
     else if (status === 'warning') warningCount++;
     else if (status === 'critical') criticalCount++;
@@ -636,7 +636,7 @@ function renderChartTopAssets(assets) {
 function renderChartAgeStatus(assets) {
   let normal = 0, warning = 0, critical = 0, unknown = 0;
   assets.forEach(a => {
-    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     if (status === 'normal') normal++;
     else if (status === 'warning') warning++;
     else if (status === 'critical') critical++;
@@ -690,7 +690,7 @@ function renderChartAgeStatus(assets) {
 // ---- Alert Table ----
 function renderAlertTable(assets) {
   const alertAssets = assets.filter(a => {
-    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     return a.condition === 'ชำรุด' || status === 'critical' || status === 'warning';
   }).slice(0, 20);
 
@@ -703,7 +703,7 @@ function renderAlertTable(assets) {
   }
 
   tbody.innerHTML = alertAssets.map(a => {
-    const { status, label } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status, label } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     const condBadge = getConditionBadge(a.condition);
     const ageBadge = `<span class="badge age-badge-${status}">${label}</span>`;
     return `
@@ -851,7 +851,7 @@ function openKpiModal(filterKey, title) {
     filtered = window.filteredAssets.filter(a => a.condition === 'ชำรุด');
   } else if (filterKey === 'critical') {
     filtered = window.filteredAssets.filter(a => {
-      const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+      const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
       return status === 'critical';
     });
   }
@@ -861,7 +861,7 @@ function openKpiModal(filterKey, title) {
     tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:2rem;">ไม่พบข้อมูล</td></tr>';
   } else {
     tbody.innerHTML = filtered.map(a => {
-      const { label: ageLabel } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+      const { label: ageLabel } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
       return `
         <tr>
           <td>${escHtml(a.asset_id || '-')}</td>

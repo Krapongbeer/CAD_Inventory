@@ -243,7 +243,7 @@ function applyFilters() {
     if (condition && a.condition !== condition) return false;
     if (building && normalizeBuilding(a.building) !== building) return false;
     if (age) {
-      const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+      const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
       if (status !== age) return false;
     }
     if (search && !(
@@ -299,7 +299,7 @@ function renderTable() {
 
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = pageItems.map(a => {
-    const { status, label } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status, label } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     const condBadge = getConditionBadge(a.condition);
     const ageBadge = `<span class="badge age-badge-${status}" style="cursor:pointer;">${label}</span>`;
     const dateFormatted = formatDate(a.registered_date);
@@ -354,7 +354,7 @@ function getPageRange(current, total) {
 // ---- Detail Modal ----
 function openDetail(asset) {
   document.getElementById('detailModalTitle').textContent = asset.name || 'รายละเอียดครุภัณฑ์';
-  const { status, label } = CAD.getAssetAgeStatus(asset.registered_date, asset.name);
+  const { status, label } = CAD.getAssetAgeStatus(asset.registered_date, asset.name, asset.asset_id);
 
   const rows = [
     ['ID', asset.id],
@@ -401,7 +401,7 @@ function exportExcel() {
 
   const headers = ['ID','คีย์สินทรัพย์','วันที่ขึ้นทะเบียน','ชื่อ','คำอธิบาย','ยี่ห้อ','รุ่น','ซีเรียล','การรับประกัน (ปี)','งาน','สภาพ','อาคาร','ชั้น','ห้อง','ผู้ครอบครอง','ผู้ดูแล','ราคา (บาท)','อายุ (ปี)','หมายเหตุ'];
   const rows = filteredAssets.map(a => {
-    const { ageYears } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { ageYears } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     return [a.id, a.asset_key, a.registered_date, a.name, a.detail, a.brand, a.model, a.serial_number, a.warranty_years, a.department, a.condition, a.building, a.floor, a.room, a.owner, a.assignee, a.cost, ageYears, a.note];
   });
 

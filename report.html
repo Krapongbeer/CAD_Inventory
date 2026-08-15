@@ -302,7 +302,7 @@ function renderReportKPIs(assets) {
 
   let critical = 0, warning = 0;
   assets.forEach(a => {
-    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     if (status === 'critical') critical++;
     else if (status === 'warning') warning++;
   });
@@ -339,7 +339,7 @@ function renderDeptTable(assets) {
     if (a.condition === 'ดี') depts[d].good++;
     else if (a.condition === 'ปานกลาง') depts[d].medium++;
     else if (a.condition === 'ชำรุด') depts[d].damaged++;
-    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     if (status === 'critical') depts[d].critical++;
   });
 
@@ -382,7 +382,7 @@ function renderReportCharts(assets) {
   let normal = 0, warning = 0, critical = 0;
   assets.forEach(a => {
     if (a.condition && condCounts[a.condition] !== undefined) condCounts[a.condition]++;
-    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     if (status === 'normal') normal++;
     else if (status === 'warning') warning++;
     else if (status === 'critical') critical++;
@@ -412,7 +412,7 @@ function renderRecommendations(assets) {
   const damaged = assets.filter(a => a.condition === 'ชำรุด').length;
   let critical = 0, warning = 0;
   assets.forEach(a => {
-    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     if (status === 'critical') critical++;
     else if (status === 'warning') warning++;
   });
@@ -475,16 +475,16 @@ function var_cmu_pale() { return 'var(--cmu-purple-pale)'; }
 // ---- Critical Table ----
 function renderCriticalTable(assets) {
   const criticals = assets.filter(a => {
-    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     return a.condition === 'ชำรุด' || status === 'critical';
   }).sort((a,b) => {
-    const { ageYears: ay } = CAD.getAssetAgeStatus(a.registered_date, a.name);
-    const { ageYears: by } = CAD.getAssetAgeStatus(b.registered_date, b.name);
+    const { ageYears: ay } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
+    const { ageYears: by } = CAD.getAssetAgeStatus(b.registered_date, b.name, b.asset_id);
     return by - ay;
   }).slice(0, 30);
 
   document.getElementById('criticalTableBody').innerHTML = criticals.map(a => {
-    const { status, label } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { status, label } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     const isVeryOld = status === 'critical';
     const isBroken = a.condition === 'ชำรุด';
     const rec = isBroken && isVeryOld ? 'จำหน่าย' : isBroken ? 'ซ่อม/จำหน่าย' : 'ทดแทน';
@@ -520,7 +520,7 @@ function exportExcelReport() {
     if (a.condition === 'ดี') deptData[d].good++;
     else if (a.condition === 'ปานกลาง') deptData[d].medium++;
     else if (a.condition === 'ชำรุด') deptData[d].damaged++;
-    const {status} = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const {status} = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     if (status === 'critical') deptData[d].critical++;
   });
 
@@ -539,7 +539,7 @@ function exportExcelReport() {
   // Sheet 2: All Data
   const allHeaders = ['ID','คีย์สินทรัพย์','ชื่อ','งาน','สภาพ','วันที่ขึ้นทะเบียน','อายุ (ปี)','สถานะอายุ','ราคา (บาท)','อาคาร','ชั้น','ห้อง','ผู้ดูแล'];
   const allRows = allAssets.map(a => {
-    const { ageYears, status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+    const { ageYears, status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
     const statusLabel = status === 'normal' ? 'ปกติ' : status === 'warning' ? 'ใกล้ครบกำหนด' : status === 'critical' ? 'เกินกำหนด' : 'ไม่ทราบ';
     return [a.id, a.asset_key, a.name, a.department, a.condition, a.registered_date, ageYears, statusLabel, a.cost, a.building, a.floor, a.room, a.assignee || a.owner];
   });
