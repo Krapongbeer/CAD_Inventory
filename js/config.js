@@ -73,9 +73,15 @@ function getAssetAgeStatus(registeredDate, assetName, assetId) {
         let [day, month, year] = parts;
         year = parseInt(year);
         if (year < 100) year += year < 50 ? 2000 : 1900;
+        if (year > 2400) year -= 543; // แปลง พ.ศ. เป็น ค.ศ.
         date = new Date(year, parseInt(month) - 1, parseInt(day));
       } else {
-        date = new Date(cleaned);
+        // บางครั้ง Excel ส่งมาเป็น string ธรรมดา
+        const d = new Date(cleaned);
+        if (d.getFullYear() > 2400) {
+          d.setFullYear(d.getFullYear() - 543);
+        }
+        date = d;
       }
       if (isNaN(date.getTime())) date = null;
     } catch {
