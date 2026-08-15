@@ -120,16 +120,11 @@ CREATE POLICY "Admins can delete assets"
     )
   );
 
--- user_roles: ผู้ใช้อ่านของตัวเองได้, admin อ่านทั้งหมดได้
+-- user_roles: ผู้ใช้อ่านของตัวเองได้ (ตัดการเช็ค admin ออกเพื่อป้องกัน infinite recursion)
 CREATE POLICY "Users can read own role"
   ON user_roles FOR SELECT
   TO authenticated
-  USING (user_id = auth.uid()
-    OR EXISTS (
-      SELECT 1 FROM user_roles ur2
-      WHERE ur2.user_id = auth.uid() AND ur2.role = 'admin'
-    )
-  );
+  USING (user_id = auth.uid());
 
 -- ================================================================
 -- Indexes สำหรับ Query ที่ใช้บ่อย
