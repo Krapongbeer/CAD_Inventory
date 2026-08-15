@@ -2,13 +2,12 @@
 // auth.js — Authentication & Role Management
 // ============================================================
 
-const { supabase } = window.CAD;
 
 /**
  * Sign in with email/password
  */
 async function signIn(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await window.CAD.supabase.auth.signInWithPassword({ email, password });
   return { data, error };
 }
 
@@ -16,7 +15,7 @@ async function signIn(email, password) {
  * Sign out
  */
 async function signOut() {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await window.CAD.supabase.auth.signOut();
   if (!error) window.location.href = 'index.html';
 }
 
@@ -24,7 +23,7 @@ async function signOut() {
  * Get current session
  */
 async function getSession() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await window.CAD.supabase.auth.getSession();
   return session;
 }
 
@@ -35,7 +34,7 @@ async function getCurrentUserRole() {
   const session = await getSession();
   if (!session) return null;
 
-  const { data, error } = await supabase
+  const { data, error } = await window.CAD.supabase
     .from('user_roles')
     .select('role, full_name')
     .eq('user_id', session.user.id)
