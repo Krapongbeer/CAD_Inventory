@@ -16,3 +16,4 @@ data/
 # Dependencies / Environment (if any used later)
 node_modules/
 .env
+research_docs/
