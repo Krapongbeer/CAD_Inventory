@@ -393,7 +393,8 @@ function renderKPIs(assets) {
       sub: `${total ? Math.round(assets.filter(a => a.condition === 'ดี').length/total*100) : 0}% ของทั้งหมด`,
       iconColor: 'green',
       icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
-      type: 'kpi-success'
+      type: 'kpi-success',
+      filterKey: 'good'
     },
     {
       label: 'ชำรุด',
@@ -401,7 +402,8 @@ function renderKPIs(assets) {
       sub: 'ต้องดำเนินการ',
       iconColor: 'red',
       icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
-      type: damaged > 0 ? 'kpi-danger' : ''
+      type: damaged > 0 ? 'kpi-danger' : '',
+      filterKey: 'damaged'
     },
     {
       label: 'เกินอายุกำหนด',
@@ -409,7 +411,8 @@ function renderKPIs(assets) {
       sub: `ใกล้ครบ ${warningCount} รายการ`,
       iconColor: 'amber',
       icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-      type: criticalCount > 0 ? 'kpi-warning' : ''
+      type: criticalCount > 0 ? 'kpi-warning' : '',
+      filterKey: 'critical'
     },
     {
       label: 'มูลค่าเฉลี่ย/รายการ',
@@ -423,7 +426,7 @@ function renderKPIs(assets) {
 
   const grid = document.getElementById('kpiGrid');
   grid.innerHTML = kpiData.map(k => `
-    <div class="kpi-card ${k.type}">
+    <div class="kpi-card ${k.type} ${k.filterKey ? 'clickable-kpi' : ''}" ${k.filterKey ? `onclick="openKpiModal('${k.filterKey}', '${k.label}')"` : ''}>
       <div class="kpi-top">
         <span class="kpi-label">${k.label}</span>
         <div class="kpi-icon ${k.iconColor}">${k.icon}</div>
@@ -837,10 +840,90 @@ function closeSidebar() {
   document.getElementById('sidebarOverlay').classList.add('hidden');
 }
 
+// ---- KPI Modal ----
+function openKpiModal(filterKey, title) {
+  document.getElementById('kpiModalTitle').textContent = 'รายการ: ' + title;
+  
+  let filtered = [];
+  if (filterKey === 'good') {
+    filtered = window.filteredAssets.filter(a => a.condition === 'ดี');
+  } else if (filterKey === 'damaged') {
+    filtered = window.filteredAssets.filter(a => a.condition === 'ชำรุด');
+  } else if (filterKey === 'critical') {
+    filtered = window.filteredAssets.filter(a => {
+      const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+      return status === 'critical';
+    });
+  }
+
+  const tbody = document.getElementById('kpiModalTableBody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:2rem;">ไม่พบข้อมูล</td></tr>';
+  } else {
+    tbody.innerHTML = filtered.map(a => {
+      const { label: ageLabel } = CAD.getAssetAgeStatus(a.registered_date, a.name);
+      return `
+        <tr>
+          <td>${escHtml(a.asset_id || '-')}</td>
+          <td>${escHtml(a.name || '-')}</td>
+          <td>${escHtml(shortenDeptName(a.department || '-'))}</td>
+          <td>${escHtml(a.responsible_person || '-')}</td>
+          <td>${getConditionBadge(a.condition)}</td>
+          <td>${escHtml(ageLabel)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('kpiModal').classList.remove('hidden');
+}
+
+function closeKpiModal() {
+  document.getElementById('kpiModal').classList.add('hidden');
+}
+
 // Sidebar overlay styles
 const overlayStyle = document.createElement('style');
-overlayStyle.textContent = `.sidebar-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;backdrop-filter:blur(2px); }`;
+overlayStyle.textContent = `.sidebar-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;backdrop-filter:blur(2px); }
+.clickable-kpi { cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.clickable-kpi:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--cmu-purple); }
+`;
 document.head.appendChild(overlayStyle);
 </script>
+
+<!-- KPI Modal -->
+<div id="kpiModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="kpiModalTitle">
+  <div class="modal" style="max-width: 900px; width: 90%;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="kpiModalTitle">รายการครุภัณฑ์</h3>
+      <button class="btn-modal-close" onclick="closeKpiModal()" aria-label="ปิด">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="padding: 0; max-height: 70vh; overflow-y: auto;">
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>รหัสครุภัณฑ์</th>
+              <th>ชื่อรายการ</th>
+              <th>งาน/ภาควิชา</th>
+              <th>ผู้รับผิดชอบ</th>
+              <th>สภาพ</th>
+              <th>อายุใช้งาน</th>
+            </tr>
+          </thead>
+          <tbody id="kpiModalTableBody">
+            <!-- Rows injected via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeKpiModal()">ปิดหน้าต่าง</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
