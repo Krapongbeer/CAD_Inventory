@@ -55,16 +55,20 @@ graph TD
 ฐานข้อมูลได้รับการออกแบบบน PostgreSQL 15+ ภายใต้สถาปัตยกรรมรวมศูนย์ในไฟล์ Master Schema [`database/schema.sql`](../database/schema.sql) ประกอบด้วย 4 ตารางหลัก ได้แก่:
 
 ### 3.2.1 ตาราง `user_roles` (การจัดการบทบาทผู้ใช้งานและการควบคุมการเข้าถึง)
-ใช้กำหนดและตรวจสอบสิทธิ์ของผู้ใช้งานแต่ละบัญชีตามมาตรฐาน Role-Based Access Control (RBAC; Sandhu et al., 1996) โดยอ้างอิง foreign key ไปยังระบบ `auth.users` ของ Supabase พร้อมจัดเก็บอีเมลเพื่อความสะดวกรวดเร็วในการบริหารจัดการ
+ใช้กำหนดและตรวจสอบสิทธิ์ของผู้ใช้งานแต่ละบัญชีตามมาตรฐาน Role-Based Access Control (RBAC; Sandhu et al., 1996) และรองรับการจัดการวงจรรหัสผ่านตามมาตรฐาน NIST SP 800-63B (Grassi et al., 2020) โดยอ้างอิง foreign key ไปยังระบบ `auth.users` ของ Supabase
 
 ```sql
 CREATE TABLE IF NOT EXISTS public.user_roles (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  role       TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'staff', 'executive', 'editor', 'viewer')),
-  full_name  TEXT,
-  email      TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id               UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  role                  TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'staff', 'executive', 'editor', 'viewer')),
+  full_name             TEXT,
+  email                 TEXT,
+  department            TEXT DEFAULT 'กองบริหารงานกลาง',
+  status                TEXT DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'pending')),
+  must_change_password  BOOLEAN DEFAULT true,
+  last_password_change  TIMESTAMPTZ DEFAULT NOW(),
+  created_at            TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
@@ -236,4 +240,33 @@ function calcDepreciation(asset) {
 
 ---
 
+## 3.6 การพัฒนาระบบ Onboarding และการจัดการวงจรรหัสผ่านตามมาตรฐานสากล NIST SP 800-63B (Grassi et al., 2020)
+
+เพื่อให้การจัดการบัญชีผู้ใช้งานและการยืนยันตัวตนมีความปลอดภัยระดับสถาบันอุดมศึกษาและเป็นไปตามข้อกำหนดความมั่นคงปลอดภัยสารสนเทศของภาครัฐ ระบบได้นำกรอบมาตรฐาน **NIST SP 800-63B (Digital Identity Guidelines: Authentication and Lifecycle Management)** มาออกแบบและพัฒนากลไกการทำงานดังนี้:
+
+### 3.6.1 อัลกอริทึมการสร้างรหัสผ่านชั่วคราวความปลอดภัยสูง (High-Entropy Temporary Password Generation)
+เมื่อผู้ดูแลระบบสร้างบัญชีผู้ใช้ใหม่ในหน้า `users.html` ระบบจะใช้ฟังก์ชัน `generateSecureTempPassword()` ในการสร้างรหัสผ่านชั่วคราวความยาว 12 ตัวอักษรที่มีค่า Entropy สูง โดยผสมผสานตัวพิมพ์ใหญ่ (Upper-case), ตัวพิมพ์เล็ก (Lower-case), ตัวเลข (Numeric Digits) และสัญลักษณ์พิเศษ (Special Symbols) พร้อมตัดตัวอักษรที่มองเห็นสับสนได้ง่ายออก (เช่น `I`, `O`, `l`, `0`, `1`)
+
+### 3.6.2 สถาปัตยกรรมการส่งมอบข้อมูลบัญชี (Onboarding Dispatch Architecture)
+เมื่อสร้างผู้ใช้สำเร็จ ระบบจะเปิดหน้าต่าง **Onboarding Result Modal** ที่รวบรวมข้อมูล ชื่อผู้ใช้, อีเมล, รหัสผ่านชั่วคราว, บทบาท และหน่วยงาน พร้อมระบบอำนวยความสะดวก:
+1. **Clipboard API Message Dispatch:** จัดรูปแบบข้อความแจ้งเตือนทางการ เพื่อให้ผู้ดูแลระบบคัดลอกส่งผ่านช่องทางสนทนาภายใน (LINE / Teams) ได้ทันที
+2. **Mailto URI Protocol Dispatch:** สร้างคำสั่งเปิด Email Client ประจำเครื่อง (เช่น Outlook, Apple Mail) พร้อมระบุ Subject และ Body ของอีเมลโดยอัตโนมัติ
+
+### 3.6.3 ระบบตรวจจับและขัดจังหวะการเข้าใช้งานครั้งแรก (First-Login Lifecycle Interceptor)
+ระบบบันทึกสถานะ `must_change_password = true` ในตาราง `user_roles` สำหรับบัญชีสร้างใหม่ เมื่อผู้ใช้นำรหัสชั่วคราวมาเข้าสู่ระบบ ฟังก์ชัน `requireAuth()` ในไฟล์ `js/auth.js` จะตรวจพบแฟล็กดังกล่าวและกระตุ้นฟังก์ชัน `checkAndEnforceFirstLoginPasswordChange()` เพื่อล็อกหน้าจอและแสดง Modal บังคับเปลี่ยนรหัสผ่านทันที โดยไม่อนุญาตให้เข้าถึงหน้าแดชบอร์ดหรือข้อมูลสินทรัพย์จนกว่าจะเปลี่ยนรหัสผ่านสำเร็จ
+
+### 3.6.4 อัลกอริทึมการประเมินความแข็งแกร่งของรหัสผ่าน (NIST Password Strength Validation Algorithm)
+ฟังก์ชัน `validateNISTPassword(password, context)` ทำการตรวจสอบรหัสผ่านใหม่ตามเกณฑ์มาตรฐาน NIST SP 800-63B อย่างเคร่งครัด:
+1. **เกณฑ์ความยาว (Minimum Length):** กำหนดความยาวขั้นต่ำอย่างน้อย 8 ตัวอักษร (แนะนำ 12+ ตัวอักษร) และรองรับความยาวได้สูงสุดถึง 64+ ตัวอักษร
+2. **การป้องกันคำเฉพาะบริบท (Context-Specific Words):** ตรวจสอบไม่ให้มีชื่อ-นามสกุล หรือชื่ออีเมลของผู้ใช้ปะปนอยู่ในรหัสผ่าน
+3. **การตรวจสอบพจนานุกรมคำต้องห้าม (Compromised & Common Dictionary Blacklist):** ตรวจสอบกับฐานข้อมูลรหัสผ่านยอดนิยมที่คาดเดาได้ง่าย เช่น `password`, `12345678`, `smartcad123`, `cmu12345`
+4. **เกจวัดระดับความปลอดภัยแบบไดนามิก (Real-time Dynamic Strength Meter):** คำนวณคะแนนความปลอดภัย 0–100 และแสดงผลแบบสด (แดง / ส้ม / เขียว) พร้อมแสดงสัญลักษณ์ผ่านเกณฑ์แต่ละข้อ (Visual Checklist)
+5. **ปุ่มเปิด-ปิดตาดูรหัสผ่าน (Show/Hide Toggle):** เพิ่มความแม่นยำในการพิมพ์รหัสผ่านของผู้ใช้ตามคำแนะนำของ NIST
+
+### 3.6.5 กลไกการคุ้มครองบัญชีผู้ดูแลระบบสูงสุด (Self-Account Protection Guard)
+ในหน้าบริหารจัดการผู้ใช้งาน (`users.html`) ระบบได้เพิ่มการตรวจจับบัญชีของผู้ที่กำลังเข้าสู่ระบบอยู่ (`isMe = user_id === session.user.id`) โดยทำการปิดการแสดงผลและปิดการทำงานของปุ่มลบบัญชี (`🗑️`) และปุ่มระงับการใช้งาน (`🚫 บล็อก`) พร้อมทั้งมีเงื่อนไขตรวจสอบซ้ำในระดับ JavaScript และ PostgreSQL Stored Procedure เพื่อป้องกันกรณี Superadmin เผลอลบหรือระงับการใช้งานบัญชีของตนเอง
+
+---
+
 *(ดูรายการเอกสารอ้างอิงฉบับสมบูรณ์ตามมาตรฐาน APA 7th Edition ได้ที่ [References_APA.md](References_APA.md))*
+

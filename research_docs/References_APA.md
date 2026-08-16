@@ -17,6 +17,7 @@
 
 ## 2. มาตรฐานความมั่นคงปลอดภัยสารสนเทศสากล (Information Security & Cybersecurity Standards)
 
+* Grassi, P. A., Garcia, M. E., & Fenton, J. L. (2020). *Digital identity guidelines: Authentication and lifecycle management* (NIST Special Publication 800-63B). National Institute of Standards and Technology. https://doi.org/10.6028/NIST.SP.800-63b
 * National Institute of Standards and Technology. (2020). *Security and privacy controls for information systems and organizations* (NIST Special Publication 800-53, Revision 5). U.S. Department of Commerce. https://doi.org/10.6028/NIST.SP.800-53r5
 * OWASP Foundation. (2021). *OWASP Top 10: 2021 - The ten most critical web application security risks*. Open Web Application Security Project. https://owasp.org/Top10/
 * International Organization for Standardization. (2022). *Information security, cybersecurity and privacy protection — Information security management systems — Requirements* (ISO/IEC Standard No. 27001:2022). ISO. https://www.iso.org/standard/27001

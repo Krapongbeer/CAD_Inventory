@@ -115,16 +115,43 @@ git push origin main
 
 ---
 
-## 🎨 สิทธิ์ผู้ใช้แต่ละประเภท
+## 🎨 สิทธิ์ผู้ใช้แต่ละประเภท (Role-Based Access Control)
 
-| หน้า | Admin | Staff | Executive |
-|---|:---:|:---:|:---:|
-| Login | ✅ | ✅ | ✅ |
-| Dashboard | ✅ | ✅ | ✅ |
-| รายการครุภัณฑ์ | ✅ | ✅ | ✅ |
-| รายงานผู้บริหาร | ✅ | ✅ | ✅ |
-| อัปโหลดข้อมูล | ✅ | ❌ | ❌ |
-| Export Excel/PDF | ✅ | ✅ | ✅ |
+| หน้า / ฟังก์ชัน | Super Admin | Admin | Executive | Staff |
+|---|:---:|:---:|:---:|:---:|
+| Login (NIST Authentication) | ✅ | ✅ | ✅ | ✅ |
+| Dashboard ภาพรวม (Overview) | ✅ | ✅ | ✅ | ✅ |
+| Dashboard วิเคราะห์เชิงลึก (Deep Analytics) | ✅ | ✅ | ✅ | ❌ |
+| ทะเบียนครุภัณฑ์ (Inventory) | ✅ | ✅ | ✅ | ✅ |
+| รายงานผู้บริหาร (Executive Report) | ✅ | ✅ | ✅ | ❌ |
+| อัปโหลดไฟล์ Excel (Data Ingestion) | ✅ | ✅ | ❌ | ❌ |
+| จัดการผู้ใช้ & สิทธิ์ (User Management) | ✅ | ✅ | ❌ | ❌ |
+| ประวัติการทำงาน (Audit Activity Logs) | ✅ | ✅ | ❌ | ❌ |
+| Export Excel / PDF | ✅ | ✅ | ✅ | ✅ |
+
+---
+
+## 🔒 มาตรฐานความมั่นคงปลอดภัย (NIST SP 800-63B Compliance)
+
+ระบบรองรับมาตรฐาน **NIST SP 800-63B: Digital Identity Guidelines**:
+- **สุ่มรหัสผ่านชั่วคราวความปลอดภัยสูง (High-Entropy Temp Password):** 12 ตัวอักษร ผสมตัวพิมพ์ใหญ่ เล็ก ตัวเลข สัญลักษณ์
+- **ระบบ Onboarding Dispatch:** สรุปข้อมูลส่งผ่าน LINE / Chat หรือคลิกส่งอีเมลผ่าน Mail Client ทันที
+- **ระบบบังคับเปลี่ยนรหัสผ่านครั้งแรก (Forced First-Login Reset):** ล็อกหน้าจอทันทีจนกว่าผู้ใช้จะตั้งรหัสผ่านใหม่ถาวร
+- **Real-time Password Strength Meter:** ตรวจสอบความยาว 8+ ตัวอักษร, ป้องกันชื่อ/อีเมลในรหัสผ่าน, ป้องกันคำง่ายในพจนานุกรม
+- **Self-Account Protection Guard:** ป้องกันผู้ดูแลระบบเผลอลบหรือระงับการใช้งานบัญชีตนเอง
+
+---
+
+## 📚 เอกสารงานวิจัยและรายงานฉบับสมบูรณ์ (Research Documentation)
+
+ระบบมีเอกสารงานวิจัย 5 บท และรายงานสรุปการพัฒนารองรับมาตรฐาน APA 7th Edition ในโฟลเดอร์ [`research_docs/`](research_docs/):
+- [`research_docs/Chapter_1_Introduction.md`](research_docs/Chapter_1_Introduction.md) — บทที่ 1: บทนำ ความเป็นมา และวัตถุประสงค์
+- [`research_docs/Chapter_2_Literature.md`](research_docs/Chapter_2_Literature.md) — บทที่ 2: วรรณกรรมและทฤษฎีที่เกี่ยวข้อง
+- [`research_docs/Chapter_3_Methodology.md`](research_docs/Chapter_3_Methodology.md) — บทที่ 3: ระเบียบวิธีวิจัยและสถาปัตยกรรมระบบ
+- [`research_docs/Chapter_4_Results.md`](research_docs/Chapter_4_Results.md) — บทที่ 4: ผลการศึกษาและการทดสอบระบบ
+- [`research_docs/Chapter_5_Conclusion.md`](research_docs/Chapter_5_Conclusion.md) — บทที่ 5: สรุปผล อภิปราย และข้อเสนอแนะ
+- [`research_docs/Update_Report_NIST_Onboarding.md`](research_docs/Update_Report_NIST_Onboarding.md) — รายงานสรุปการอัปเดตระบบ NIST SP 800-63B
+- [`research_docs/References_APA.md`](research_docs/References_APA.md) — เอกสารอ้างอิงมาตรฐาน APA 7th Edition
 
 ---
 
@@ -143,11 +170,11 @@ git push origin main
 
 | ส่วน | เทคโนโลยี | ราคา |
 |---|---|---|
-| Frontend | HTML + Vanilla JS + CSS | ฟรี |
-| Auth | Supabase Auth | ฟรี |
-| Database | Supabase PostgreSQL | ฟรี (500MB) |
-| กราฟ | Chart.js | ฟรี |
-| Excel | SheetJS (xlsx) | ฟรี |
+| Frontend | HTML5 + Vanilla JavaScript (ES6+) + CSS3 | ฟรี |
+| Auth & Backend | Supabase GoTrue Auth + PostgreSQL 15+ | ฟรี (500MB) |
+| Security Framework | NIST SP 800-63B + OWASP Top 10 + RBAC | มาตรฐานสากล |
+| กราฟและการแสดงผล | Chart.js 4.4.1 | ฟรี (MIT) |
+| Excel Parser | SheetJS (xlsx 0.18.5) | ฟรี (Apache 2.0) |
 | Hosting | GitHub Pages | ฟรี |
 
 ---
@@ -157,3 +184,4 @@ git push origin main
 กองบริหารงานกลาง สำนักงานมหาวิทยาลัย  
 มหาวิทยาลัยเชียงใหม่  
 239 ถนนห้วยแก้ว ตำบลสุเทพ อำเภอเมือง จังหวัดเชียงใหม่ 50200
+
