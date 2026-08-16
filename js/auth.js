@@ -360,6 +360,9 @@ async function adminUpdateUser(targetUserId, newFullName, newRole, newPassword =
     const updateObj = { full_name: newFullName };
     if (newRole) updateObj.role = newRole;
     if (newEmail) updateObj.email = newEmail;
+    if (newPassword) {
+      updateObj.must_change_password = true;
+    }
 
     const { error: fbErr } = await window.CAD.supabase
       .from('user_roles')
@@ -617,7 +620,7 @@ function checkAndEnforceFirstLoginPasswordChange(userData) {
           </div>
           <h2 style="font-size:1.25rem; font-weight:700; margin:0 0 0.35rem; color:white;">กำหนดรหัสผ่านใหม่สำหรับการเข้าใช้งานครั้งแรก</h2>
           <p style="font-size:0.84rem; opacity:0.88; margin:0; line-height:1.4;">
-            เพื่อความปลอดภัยสูงสุดตามมาตรฐานสากล <strong>NIST SP 800-63B</strong> กรุณาเปลี่ยนรหัสผ่านชั่วคราวก่อนเริ่มใช้งานระบบ
+            เพื่อความปลอดภัยสูงสุด กรุณาเปลี่ยนรหัสผ่านชั่วคราวก่อนเริ่มใช้งานระบบ
           </p>
         </div>
 
@@ -658,9 +661,9 @@ function checkAndEnforceFirstLoginPasswordChange(userData) {
             </div>
           </div>
 
-          <!-- NIST Criteria Checklist -->
+          <!-- Criteria Checklist -->
           <div style="background:var(--bg-hover, #f8fafc); border:1px solid var(--border-color, #e2e8f0); border-radius:10px; padding:0.85rem 1rem; margin-bottom:1.25rem; font-size:0.78rem;">
-            <div style="font-weight:700; color:var(--text-secondary, #475569); margin-bottom:0.45rem;">มาตรฐานความปลอดภัย NIST SP 800-63B:</div>
+            <div style="font-weight:700; color:var(--text-secondary, #475569); margin-bottom:0.45rem;">เกณฑ์ความปลอดภัยมาตรฐาน:</div>
             <div id="chkLength" style="display:flex; align-items:center; gap:0.45rem; color:#94a3b8; margin-bottom:0.25rem;">
               <span>⚪</span> ความยาวอย่างน้อย 8 ตัวอักษรขึ้นไป
             </div>
@@ -779,7 +782,7 @@ async function handleNistPasswordSubmit() {
     const { data, error } = await userChangeOwnPassword(newPwd, userContext);
     if (error) throw error;
 
-    alert('✅ ตั้งรหัสผ่านใหม่สำเร็จตามมาตรฐาน NIST SP 800-63B!\nระบบกำลังนำคุณเข้าสู่การใช้งาน');
+    alert('✅ ตั้งรหัสผ่านใหม่สำเร็จเรียบร้อยแล้ว!\nระบบกำลังนำคุณเข้าสู่การใช้งาน');
     const modal = document.getElementById('nistFirstLoginModal');
     if (modal) modal.remove();
     window.location.reload();
