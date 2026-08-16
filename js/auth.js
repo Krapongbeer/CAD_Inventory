@@ -202,19 +202,33 @@ async function adminCreateUser(email, password, fullName, userRole) {
     let targetUid = authData?.user?.id;
 
     if (!targetUid) {
-      // If signUp restricted by email confirmation or user already exists, generate a valid UUID
       targetUid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'usr_' + Date.now();
     }
 
-    const { error: roleErr } = await window.CAD.supabase
+    const baseObj = {
+      user_id: targetUid,
+      role: userRole,
+      full_name: fullName,
+      email: email
+    };
+
+    // Try upserting with department and status
+    let { error: roleErr } = await window.CAD.supabase
       .from('user_roles')
       .upsert({
-        user_id: targetUid,
-        role: userRole,
-        full_name: fullName,
-        email: email,
+        ...baseObj,
+        department: 'กองบริหารงานกลาง',
         status: 'active'
       }, { onConflict: 'user_id' });
+
+    // If department or status column doesn't exist, fallback to base columns
+    if (roleErr && roleErr.message && (roleErr.message.includes('department') || roleErr.message.includes('status'))) {
+      console.warn('user_roles lacks department/status columns, falling back to base columns:', roleErr.message);
+      const res = await window.CAD.supabase
+        .from('user_roles')
+        .upsert(baseObj, { onConflict: 'user_id' });
+      roleErr = res.error;
+    }
 
     if (roleErr) throw roleErr;
 

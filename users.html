@@ -598,11 +598,15 @@ async function toggleUserStatus(userId, currentStatus, fullName) {
   if (!confirm(`คุณต้องการเปลี่ยนสถานะบัญชีของ "${fullName}" เป็น "${label}" ใช่หรือไม่?`)) return;
 
   try {
-    const { error } = await CAD.supabase
+    let { error } = await CAD.supabase
       .from('user_roles')
       .update({ status: newStatus })
       .eq('user_id', userId);
 
+    if (error && error.message?.includes('status')) {
+      alert('ระบบฐานข้อมูลยังไม่มีคอลัมน์ status กรุณารันคำสั่ง ALTER TABLE ใน Supabase SQL Editor');
+      return;
+    }
     if (error) throw error;
 
     await logActivity('toggle_status', `เปลี่ยนสถานะบัญชี: ${fullName} เป็น ${label}`);
@@ -716,7 +720,11 @@ async function submitAddUser() {
 
     // Update department if stored
     if (data?.user_id || data?.id) {
-      await CAD.supabase.from('user_roles').update({ department }).eq('user_id', data.user_id || data.id);
+      try {
+        await CAD.supabase.from('user_roles').update({ department }).eq('user_id', data.user_id || data.id);
+      } catch (deptErr) {
+        console.warn('Could not update department column (ignoring):', deptErr);
+      }
     }
 
     await logActivity('create_user', `สร้างผู้ใช้ใหม่: ${fullName} (${role}) อีเมล: ${email}, แผนก: ${department}`);
@@ -779,11 +787,19 @@ async function submitEditUser() {
   try {
     const { error } = await adminUpdateUser(userId, newName, newRole, newPassword || null, newEmail || null);
     
-    // Always sync department and status directly in user_roles
-    await CAD.supabase
+    // Sync to user_roles with column-missing fallback
+    let { error: updateErr } = await CAD.supabase
       .from('user_roles')
       .update({ full_name: newName, role: newRole, email: newEmail, department: newDept, status: newStatus })
       .eq('user_id', userId);
+
+    if (updateErr && (updateErr.message?.includes('department') || updateErr.message?.includes('status'))) {
+      const res = await CAD.supabase
+        .from('user_roles')
+        .update({ full_name: newName, role: newRole, email: newEmail })
+        .eq('user_id', userId);
+      updateErr = res.error;
+    }
 
     await logActivity('update_user', `แก้ไขบัญชีผู้ใช้: ${newName} (Role: ${newRole}, อีเมล: ${newEmail}, แผนก: ${newDept})`);
     closeEditUserModal();
