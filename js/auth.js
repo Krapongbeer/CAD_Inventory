@@ -9,14 +9,25 @@
 async function signIn(email, password) {
   try {
     const cleanEmail = (email || '').trim().toLowerCase();
-    const { data, error } = await window.CAD.supabase.auth.signInWithPassword({ 
+    let res = await window.CAD.supabase.auth.signInWithPassword({ 
       email: cleanEmail, 
       password: password 
     });
-    if (!error && data?.user) {
-      logActivity('login', 'เข้าสู่ระบบสำเร็จ', data.user.id).catch(() => {});
+
+    // Smart fallback if user typed space instead of underscore
+    if (res.error && password && password.includes(' ')) {
+      const altPwd = password.replace(/ /g, '_');
+      const altRes = await window.CAD.supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: altPwd
+      });
+      if (!altRes.error) res = altRes;
     }
-    return { data, error };
+
+    if (!res.error && res.data?.user) {
+      logActivity('login', 'เข้าสู่ระบบสำเร็จ', res.data.user.id).catch(() => {});
+    }
+    return res;
   } catch (err) {
     console.error('signIn exception:', err);
     return { data: null, error: err };
@@ -250,6 +261,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentTheme = localStorage.getItem('cad_theme_preference') || 'auto';
   const sel = document.getElementById('themeSelectDropdown');
   if (sel) sel.value = currentTheme;
+});
+
 // Admin User Management: Native GoTrue Auth Creation
 async function adminCreateUser(email, password, fullName, userRole, department = 'กองบริหารงานกลาง') {
   try {
