@@ -242,8 +242,13 @@ function getAssetAgeStatus(registeredDate, assetName, assetId, assetDetail = '',
 window.CAD = {
   supabase: dbClient,
   SUPABASE_URL,
+  SUPABASE_ANON_KEY,
   getAssetAgeStatus,
   getAssetCategory,
   CGD_CATEGORIES,
   ASSET_AGE_THRESHOLDS
 };
+
+// Also attach globally to window to be absolutely bulletproof
+window.SUPABASE_URL = SUPABASE_URL;
+window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
