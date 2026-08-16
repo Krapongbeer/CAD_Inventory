@@ -42,7 +42,7 @@
 
       <a href="users.html" class="nav-link nav-admin" style="display:none">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        จัดการผู้ใช้
+        จัดการผู้ใช้ &amp; Audit Log
       </a>
     </nav>
     <div class="sidebar-footer">
@@ -205,10 +205,11 @@ let currentPage = 1;
 const PAGE_SIZE = 20;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const user = await requireAuth(['admin', 'staff', 'executive']);
+  const user = await requireAuth(['superadmin', 'admin', 'staff', 'executive']);
   if (!user) return;
-  if (user.role === 'admin') {
-    document.querySelector('.nav-admin-label').style.display = '';
+  if (user.role === 'admin' || user.role === 'superadmin') {
+    const lbl = document.querySelector('.nav-admin-label');
+    if (lbl) lbl.style.display = '';
     document.querySelectorAll('.nav-admin').forEach(el => el.style.display = '');
   }
   await populateNavUser();

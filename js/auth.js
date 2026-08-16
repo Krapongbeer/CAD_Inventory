@@ -62,9 +62,14 @@ async function requireAuth(allowedRoles = ['superadmin', 'admin', 'staff', 'exec
 
   const userRole = await getCurrentUserRole();
   if (!userRole) {
-    alert('Login Success, but failed to load user role from database. (You may not have a role assigned in user_roles table, or RLS blocked it).');
+    alert('เข้าสู่ระบบสำเร็จ แต่ไม่พบบทบาทในระบบ (user_roles) กรุณาติดต่อผู้ดูแลระบบ');
     window.location.href = 'index.html';
     return null;
+  }
+
+  // Superadmin has absolute supreme permission across all pages and features!
+  if (userRole.role === 'superadmin') {
+    return { session, ...userRole };
   }
 
   if (!allowedRoles.includes(userRole.role)) {
@@ -95,6 +100,14 @@ async function populateNavUser() {
   const nameStr = userRole?.full_name || session?.user?.email || '-';
   const roleStr = roleLabels[userRole?.role] || userRole?.role || '-';
   
+  // Unhide Admin Navigation for Admin and Superadmin across all pages
+  if (userRole?.role === 'admin' || userRole?.role === 'superadmin') {
+    document.querySelectorAll('.nav-admin').forEach(el => el.style.display = '');
+    document.querySelectorAll('.nav-admin-label').forEach(el => el.style.display = '');
+    const adminSec = document.getElementById('adminSection');
+    if (adminSec) adminSec.style.display = '';
+  }
+
   // Legacy sidebar fallback
   const nameEl = document.getElementById('navUserName');
   const roleEl = document.getElementById('navUserRole');
@@ -152,14 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sel) sel.value = currentTheme;
 });
 
-// Expose globally
-window.signIn = signIn;
-window.signOut = signOut;
-window.getSession = getSession;
-window.getCurrentUserRole = getCurrentUserRole;
-window.requireAuth = requireAuth;
-window.populateNavUser = populateNavUser;
-window.adminCreateUser = async function(email, password, fullName, userRole) {
+// Admin User Management RPC Calls
+async function adminCreateUser(email, password, fullName, userRole) {
   const { data, error } = await window.CAD.supabase.rpc('admin_create_user', {
     email: email,
     password: password,
@@ -167,24 +174,55 @@ window.adminCreateUser = async function(email, password, fullName, userRole) {
     user_role: userRole
   });
   return { data, error };
-};
+}
+
+async function adminUpdateUser(targetUserId, newFullName, newRole, newPassword = null) {
+  const { data, error } = await window.CAD.supabase.rpc('admin_update_user', {
+    target_user_id: targetUserId,
+    new_full_name: newFullName,
+    new_role: newRole,
+    new_password: newPassword || null
+  });
+  return { data, error };
+}
+
+async function adminDeleteUser(targetUserId) {
+  const { data, error } = await window.CAD.supabase.rpc('admin_delete_user', {
+    target_user_id: targetUserId
+  });
+  return { data, error };
+}
 
 /**
  * Log activity to database
  */
 async function logActivity(action, details = '', userId = null) {
-  if (!userId) {
-    const session = await getSession();
-    if (session) userId = session.user.id;
+  try {
+    if (!userId) {
+      const session = await getSession();
+      if (session) userId = session.user.id;
+    }
+    
+    if (!userId) return;
+    
+    await window.CAD.supabase.from('activity_logs').insert([{
+      user_id: userId,
+      action: action,
+      details: details
+    }]);
+  } catch (err) {
+    console.warn('Activity logging error:', err);
   }
-  
-  if (!userId) return; // Cannot log without user
-  
-  await window.CAD.supabase.from('activity_logs').insert([{
-    user_id: userId,
-    action: action,
-    details: details
-  }]);
 }
 
+// Expose globally
+window.signIn = signIn;
+window.signOut = signOut;
+window.getSession = getSession;
+window.getCurrentUserRole = getCurrentUserRole;
+window.requireAuth = requireAuth;
+window.populateNavUser = populateNavUser;
+window.adminCreateUser = adminCreateUser;
+window.adminUpdateUser = adminUpdateUser;
+window.adminDeleteUser = adminDeleteUser;
 window.logActivity = logActivity;
