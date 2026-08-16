@@ -177,26 +177,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentTheme = localStorage.getItem('cad_theme_preference') || 'auto';
   const sel = document.getElementById('themeSelectDropdown');
   if (sel) sel.value = currentTheme;
-});
-
-// Admin User Management RPC Calls with automatic client fallback
-async function adminCreateUser(email, password, fullName, userRole) {
-  // 1. Try calling the PostgreSQL RPC function
+// Admin User Management: Native GoTrue Auth Creation
+async function adminCreateUser(email, password, fullName, userRole, department = 'กองบริหารงานกลาง') {
   try {
-    const { data, error } = await window.CAD.supabase.rpc('admin_create_user', {
-      email: email,
-      password: password,
-      full_name: fullName,
-      user_role: userRole
-    });
-    if (!error && data?.user_id) return { data, error: null };
-    console.warn('RPC admin_create_user failed or not installed, trying fallback...', error);
-  } catch (rpcErr) {
-    console.warn('RPC exception, trying fallback...', rpcErr);
-  }
-
-  // 2. Client-Side Fallback via Isolated Non-Persistent Supabase Auth & user_roles
-  try {
+    const cleanEmail = email.trim().toLowerCase();
+    
+    // Create an isolated non-persistent Supabase Auth instance
     const tempAuth = window.supabase.createClient(window.CAD.SUPABASE_URL, window.CAD.SUPABASE_ANON_KEY || window.SUPABASE_ANON_KEY, {
       auth: {
         persistSession: false,
@@ -205,51 +191,66 @@ async function adminCreateUser(email, password, fullName, userRole) {
       }
     });
 
+    // 1. Native GoTrue Sign Up (Creates user, hash, and identity in official format)
     const { data: authData, error: authError } = await tempAuth.auth.signUp({
-      email: email,
+      email: cleanEmail,
       password: password,
       options: {
-        data: { full_name: fullName }
+        data: { 
+          full_name: fullName,
+          role: userRole,
+          department: department
+        }
       }
     });
 
-    let targetUid = authData?.user?.id;
-
-    if (!targetUid) {
-      targetUid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'usr_' + Date.now();
+    if (authError) {
+      // If user already exists in auth.users, try RPC or throw
+      if (authError.message?.includes('already registered')) {
+        throw new Error('อีเมลนี้ถูกใช้งานแล้วในระบบ หากต้องการเปลี่ยนรหัสผ่านกรุณาใช้ปุ่ม "รีเซ็ตรหัสผ่าน"');
+      }
+      throw authError;
     }
 
-    const baseObj = {
+    const targetUid = authData?.user?.id;
+    if (!targetUid) {
+      throw new Error('ไม่สามารถสร้าง User ID ได้ กรุณาลองใหม่อีกครั้ง');
+    }
+
+    // 2. Sync to user_roles table with NIST must_change_password = true
+    const roleObj = {
       user_id: targetUid,
       role: userRole,
       full_name: fullName,
-      email: email
+      email: cleanEmail,
+      department: department || 'กองบริหารงานกลาง',
+      status: 'active',
+      must_change_password: true,
+      last_password_change: new Date().toISOString()
     };
 
-    // Try upserting with department and status
     let { error: roleErr } = await window.CAD.supabase
       .from('user_roles')
-      .upsert({
-        ...baseObj,
-        department: 'กองบริหารงานกลาง',
-        status: 'active'
-      }, { onConflict: 'user_id' });
+      .upsert(roleObj, { onConflict: 'user_id' });
 
-    // If department or status column doesn't exist, fallback to base columns
-    if (roleErr && roleErr.message && (roleErr.message.includes('department') || roleErr.message.includes('status'))) {
-      console.warn('user_roles lacks department/status columns, falling back to base columns:', roleErr.message);
-      const res = await window.CAD.supabase
-        .from('user_roles')
-        .upsert(baseObj, { onConflict: 'user_id' });
+    if (roleErr && roleErr.message && (roleErr.message.includes('must_change_password') || roleErr.message.includes('department'))) {
+      // Fallback for missing optional columns
+      const baseObj = {
+        user_id: targetUid,
+        role: userRole,
+        full_name: fullName,
+        email: cleanEmail
+      };
+      const res = await window.CAD.supabase.from('user_roles').upsert(baseObj, { onConflict: 'user_id' });
       roleErr = res.error;
     }
 
     if (roleErr) throw roleErr;
 
-    return { data: { success: true, user_id: targetUid }, error: null };
-  } catch (fallbackErr) {
-    console.error('adminCreateUser fallback failed:', fallbackErr);
-    return { data: null, error: fallbackErr };
+    return { data: { success: true, user_id: targetUid, user: authData.user }, error: null };
+  } catch (err) {
+    console.error('adminCreateUser error:', err);
+    return { data: null, error: err };
   }
 }
 

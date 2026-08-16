@@ -849,7 +849,7 @@ async function submitAddUser() {
   btn.textContent = 'กำลังสร้างผู้ใช้ & ออกรหัสชั่วคราว...';
 
   try {
-    const { data, error } = await adminCreateUser(email, password, fullName, role);
+    const { data, error } = await adminCreateUser(email, password, fullName, role, department);
     if (error) throw error;
 
     const targetUid = data?.user_id || data?.id;
