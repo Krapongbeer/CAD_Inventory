@@ -117,6 +117,8 @@ function getAssetAgeStatus(registeredDate, assetName, assetId) {
     return { ageYears: 0, status: 'unknown', label: 'ไม่ทราบ' };
   }
 
+  const now = new Date();
+  const ageMs = now.getTime() - date.getTime();
   let ageYears = ageMs / (1000 * 60 * 60 * 24 * 365.25);
   if (ageYears < 0) ageYears = 0;
 
