@@ -729,6 +729,12 @@ async function confirmDirectDeleteUser(userId, fullName) {
     return;
   }
 
+  const targetUser = allUsersList.find(u => u.user_id === userId);
+  if (targetUser && targetUser.role === 'superadmin' && currentUserData?.role !== 'superadmin') {
+    alert('คุณไม่มีสิทธิ์ในการลบผู้ใช้งานระดับ Super Admin');
+    return;
+  }
+
   if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบบัญชีของ "${fullName}" ออกจากระบบถาวร?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`)) {
     try {
       const { error } = await adminDeleteUser(userId);
@@ -1078,6 +1084,17 @@ async function submitEditUser() {
 async function confirmDeleteUser() {
   const userId = document.getElementById('editUserId').value;
   const fullName = document.getElementById('editFullName').value;
+
+  if (userId === currentUserData?.session?.user?.id) {
+    alert('คุณไม่สามารถลบบัญชีของตัวเองที่กำลังล็อกอินอยู่ได้');
+    return;
+  }
+
+  const targetUser = allUsersList.find(u => u.user_id === userId);
+  if (targetUser && targetUser.role === 'superadmin' && currentUserData?.role !== 'superadmin') {
+    alert('คุณไม่มีสิทธิ์ในการลบผู้ใช้งานระดับ Super Admin');
+    return;
+  }
 
   if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบบัญชีของ "${fullName}" ออกจากระบบถาวร?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`)) {
     try {

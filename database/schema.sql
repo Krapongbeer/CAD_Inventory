@@ -333,6 +333,7 @@ CREATE OR REPLACE FUNCTION public.admin_delete_user(
 ) RETURNS JSONB AS $$
 DECLARE
   caller_role TEXT;
+  target_role TEXT;
   v_target_name TEXT;
 BEGIN
   SELECT role INTO caller_role FROM public.user_roles WHERE user_roles.user_id = auth.uid();
@@ -340,11 +341,15 @@ BEGIN
     RAISE EXCEPTION 'Unauthorized: Only admins and superadmins can delete users.';
   END IF;
 
+  SELECT role, full_name INTO target_role, v_target_name FROM public.user_roles WHERE user_roles.user_id = target_user_id;
+
+  IF target_role = 'superadmin' AND caller_role != 'superadmin' THEN
+    RAISE EXCEPTION 'Unauthorized: Admin cannot delete a superadmin user.';
+  END IF;
+
   IF target_user_id = auth.uid() THEN
     RAISE EXCEPTION 'Cannot delete your own active account.';
   END IF;
-
-  SELECT full_name INTO v_target_name FROM public.user_roles WHERE user_roles.user_id = target_user_id;
 
   DELETE FROM public.user_roles WHERE user_roles.user_id = target_user_id;
   DELETE FROM auth.identities WHERE user_id = target_user_id;
@@ -356,6 +361,7 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'message', 'User deleted successfully');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
 
 
 -- 4.5 สิทธิ์การ Execute ฟังก์ชัน
