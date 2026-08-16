@@ -503,24 +503,24 @@ function renderUsersTable(users) {
     return `
       <tr>
         <td>
-          <div style="display:flex; align-items:center; gap:0.75rem;">
-            <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, var(--cmu-purple-mid), var(--cmu-purple-light)); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.88rem; flex-shrink:0;">${initial}</div>
+          <div style="display:flex; align-items:center; gap:0.85rem;">
+            <div style="width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, var(--cmu-purple-mid), var(--cmu-purple-light)); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.92rem; flex-shrink:0; box-shadow:0 2px 6px rgba(74,30,138,0.2);">${initial}</div>
             <div>
-              <strong style="font-size:0.92rem; color:var(--text-primary); display:block;">${escHtml(u.full_name || '-')}</strong>
+              <strong style="font-size:0.92rem; color:var(--text-primary); display:block; line-height:1.35;">${escHtml(u.full_name || '-')}</strong>
             </div>
           </div>
         </td>
         <td>
           <div>
-            <span style="font-weight:600; font-size:0.88rem; color:var(--text-primary);">${escHtml(username)}</span>
-            <div style="font-size:0.76rem; color:var(--text-muted); margin-top:0.15rem;">
+            <span style="font-weight:600; font-size:0.88rem; color:var(--text-primary); display:block;">${escHtml(username)}</span>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.2rem; word-break:break-all;">
               ${escHtml(displayEmail)}
             </div>
           </div>
         </td>
         <td>
-          <span style="font-size:0.82rem; color:var(--text-secondary); background:var(--bg-hover); padding:0.2rem 0.55rem; border-radius:6px; border:1px solid var(--border-color);">
-            ${escHtml(dept)}
+          <span class="dept-badge">
+            🏢 ${escHtml(dept)}
           </span>
         </td>
         <td>
@@ -534,7 +534,7 @@ function renderUsersTable(users) {
         <td>
           ${isSuspended 
             ? '<span class="status-pill-suspended">🔴 ระงับใช้งาน</span>' 
-            : '<span class="status-pill-active">🟢 อนุมัติใช้งาน</span>'}
+            : '<span class="status-pill-active">🟢 ใช้งานปกติ</span>'}
         </td>
         <td style="text-align:right;">
           <div class="user-action-group">
@@ -542,10 +542,10 @@ function renderUsersTable(users) {
               ✏️ แก้ไข
             </button>
             <button class="btn-action-pill btn-action-key" onclick="openQuickResetModal('${u.user_id}', '${escHtml(u.full_name||'')}', '${escHtml(displayEmail)}')" title="รีเซ็ตรหัสผ่าน">
-              🔑 รีเซ็ตรหัส
+              🔑 รีเซ็ต
             </button>
             <button class="btn-action-pill btn-action-block" onclick="toggleUserStatus('${u.user_id}', '${u.status||'active'}', '${escHtml(u.full_name||'')}')" title="${isSuspended?'ปลดบล็อก':'ระงับการใช้งาน'}">
-              🚫 ${isSuspended ? 'ปลดบล็อก' : 'บล็อก'}
+              ${isSuspended ? '🔓 ปลดบล็อก' : '🚫 บล็อก'}
             </button>
             <button class="btn-action-pill btn-action-delete" onclick="confirmDirectDeleteUser('${u.user_id}', '${escHtml(u.full_name||'')}')" title="ลบบัญชีผู้ใช้">
               🗑️
