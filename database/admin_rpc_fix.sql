@@ -7,7 +7,115 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 0. เพิ่มคอลัมน์ในตาราง user_roles สำหรับ NIST Onboarding & Password Lifecycle
+-- ================================================================
+-- 0. ซ่อมแซมและสร้างบัญชี kequiv@hotmail.com และทุกบัญชีในระบบทันที
+-- ================================================================
+DO $$
+DECLARE
+  v_uid UUID;
+BEGIN
+  SELECT id INTO v_uid FROM auth.users WHERE lower(email) = 'kequiv@hotmail.com';
+  
+  IF v_uid IS NULL THEN
+    v_uid := gen_random_uuid();
+    INSERT INTO auth.users (
+      instance_id,
+      id,
+      aud,
+      role,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      raw_app_meta_data,
+      raw_user_meta_data,
+      created_at,
+      updated_at
+    ) VALUES (
+      '00000000-0000-0000-0000-000000000000',
+      v_uid,
+      'authenticated',
+      'authenticated',
+      'kequiv@hotmail.com',
+      crypt('fQzi=2fM@9*W', gen_salt('bf')),
+      NOW(),
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      '{"full_name":"Kequiv"}'::jsonb,
+      NOW(),
+      NOW()
+    );
+  ELSE
+    -- อัปเดตรหัสผ่านและยืนยันอีเมล
+    UPDATE auth.users
+    SET encrypted_password = crypt('fQzi=2fM@9*W', gen_salt('bf')),
+        email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+        raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb,
+        updated_at = NOW()
+    WHERE id = v_uid;
+  END IF;
+
+  -- ซ่อมแซม Identity ใน auth.identities
+  DELETE FROM auth.identities WHERE user_id = v_uid;
+  INSERT INTO auth.identities (
+    id,
+    user_id,
+    identity_data,
+    provider,
+    provider_id,
+    last_sign_in_at,
+    created_at,
+    updated_at
+  ) VALUES (
+    v_uid,
+    v_uid,
+    jsonb_build_object('sub', v_uid::text, 'email', 'kequiv@hotmail.com', 'email_verified', true),
+    'email',
+    v_uid::text,
+    NOW(),
+    NOW(),
+    NOW()
+  );
+
+  -- ซิงค์ใน user_roles
+  INSERT INTO public.user_roles (user_id, role, full_name, email, department, status, must_change_password)
+  VALUES (v_uid, 'staff', 'Kequiv', 'kequiv@hotmail.com', 'กองบริหารงานกลาง', 'active', true)
+  ON CONFLICT (user_id) DO UPDATE
+  SET email = 'kequiv@hotmail.com',
+      must_change_password = true,
+      status = 'active';
+END $$;
+
+-- ซ่อมแซม Identity สำหรับทุกผู้ใช้งานที่อยู่ใน auth.users
+INSERT INTO auth.identities (
+  id,
+  user_id,
+  identity_data,
+  provider,
+  provider_id,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+SELECT 
+  u.id,
+  u.id,
+  jsonb_build_object('sub', u.id::text, 'email', lower(trim(u.email)), 'email_verified', true),
+  'email',
+  u.id::text,
+  NOW(),
+  NOW(),
+  NOW()
+FROM auth.users u
+WHERE NOT EXISTS (
+  SELECT 1 FROM auth.identities i WHERE i.user_id = u.id
+)
+ON CONFLICT DO NOTHING;
+
+-- อัปเดต email_confirmed_at ให้ทุกบัญชี
+UPDATE auth.users 
+SET email_confirmed_at = NOW() 
+WHERE email_confirmed_at IS NULL;
+
+-- 0.1 เพิ่มคอลัมน์ในตาราง user_roles สำหรับ NIST Onboarding & Password Lifecycle
 ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS department TEXT DEFAULT 'กองบริหารงานกลาง';
 ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
 ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT true;

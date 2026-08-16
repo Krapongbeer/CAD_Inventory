@@ -341,19 +341,10 @@ input, select, textarea { font-family: inherit; }
   align-items: center;
 }
 
-.input-icon {
-  position: absolute;
-  left: 0.875rem;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.form-input {
+.input-wrap .form-input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  height: 44px;
+  padding: 0 2.75rem 0 2.75rem !important;
   border: 1.5px solid var(--border-color);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-base);
@@ -361,15 +352,16 @@ input, select, textarea { font-family: inherit; }
   background: var(--bg-input);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
   outline: none;
+  box-sizing: border-box;
 }
 
-.form-input:focus {
+.input-wrap .form-input:focus {
   border-color: var(--cmu-purple-mid);
   box-shadow: 0 0 0 3px rgba(139,92,246,0.15);
   background: var(--bg-card);
 }
 
-.form-input::placeholder { color: var(--text-muted); opacity: 0.7; }
+.input-wrap .form-input::placeholder { color: var(--text-muted); opacity: 0.7; }
 
 .input-toggle {
   position: absolute;
