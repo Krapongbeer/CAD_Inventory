@@ -55,6 +55,27 @@ BEGIN
     NOW()
   ) RETURNING id INTO new_user_id;
 
+  -- สร้าง Identity ใน auth.identities เพื่อให้ GoTrue Auth ค้นหาและเข้าสู่ระบบได้
+  INSERT INTO auth.identities (
+    id,
+    user_id,
+    identity_data,
+    provider,
+    provider_id,
+    last_sign_in_at,
+    created_at,
+    updated_at
+  ) VALUES (
+    new_user_id::text,
+    new_user_id,
+    jsonb_build_object('sub', new_user_id::text, 'email', admin_create_user.email),
+    'email',
+    admin_create_user.email,
+    NOW(),
+    NOW(),
+    NOW()
+  ) ON CONFLICT DO NOTHING;
+
   -- เพิ่มสิทธิ์ใน user_roles
   INSERT INTO public.user_roles (user_id, role, full_name, email, department, status)
   VALUES (new_user_id, admin_create_user.user_role, admin_create_user.full_name, admin_create_user.email, 'กองบริหารงานกลาง', 'active')
