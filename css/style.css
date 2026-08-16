@@ -2107,6 +2107,67 @@ input, select, textarea { font-family: inherit; }
 .kpi-icon.orange { background: #FFEDD5; color: #EA580C; }
 
 /* ============================================================
+   DASHBOARD FILTER BAR
+   ============================================================ */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-card);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.filter-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 0 0.75rem;
+  background: var(--bg-input);
+  height: 38px;
+  flex: 1;
+  min-width: 240px;
+  transition: all var(--transition-fast);
+}
+
+.filter-search:focus-within {
+  border-color: var(--cmu-purple-mid);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  background: var(--bg-card);
+}
+
+.filter-search svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.filter-search input {
+  border: none;
+  outline: none;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  font-family: inherit;
+}
+
+/* ============================================================
    RESPONSIVE ADDITIONS
    ============================================================ */
 @media (max-width: 1200px) {
