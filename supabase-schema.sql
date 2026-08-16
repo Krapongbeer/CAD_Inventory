@@ -17,10 +17,20 @@
 CREATE TABLE IF NOT EXISTS user_roles (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  role       TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'staff', 'executive')),
+  role       TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'staff', 'executive', 'editor', 'viewer')),
   full_name  TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- อัปเดต constraint ให้รองรับ superadmin (กรณี table มีอยู่เดิมใน Supabase)
+DO $$
+BEGIN
+  ALTER TABLE user_roles DROP CONSTRAINT IF EXISTS user_roles_role_check;
+  ALTER TABLE user_roles ADD CONSTRAINT user_roles_role_check 
+    CHECK (role IN ('superadmin', 'admin', 'staff', 'executive', 'editor', 'viewer'));
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END $$;
 
 -- 2. ตารางประวัติการอัปโหลด
 CREATE TABLE IF NOT EXISTS upload_batches (
