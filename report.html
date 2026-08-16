@@ -310,27 +310,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadReport() {
-  const { data, error } = await CAD.supabase.from('assets').select('*');
-  if (error || !data || !data.length) {
-    document.getElementById('loadingState').innerHTML = `<p style="color:var(--gray-400);">ยังไม่มีข้อมูล กรุณาอัปโหลดไฟล์ Excel ก่อน</p>`;
-    return;
+  try {
+    const { data, error } = await CAD.supabase.from('assets').select('*');
+    if (error || !data || !data.length) {
+      document.getElementById('loadingState').innerHTML = `<p style="color:var(--gray-400);">ยังไม่มีข้อมูล กรุณาอัปโหลดไฟล์ Excel ก่อน</p>`;
+      return;
+    }
+
+    allAssets = data;
+
+    const now = new Date();
+    document.getElementById('reportDateLabel').textContent = `ข้อมูล ณ วันที่ ${now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+    document.getElementById('printDate').textContent = `จัดทำ ณ วันที่ ${now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+
+    try { renderReportKPIs(allAssets); } catch (e) { console.error('renderReportKPIs error:', e); }
+    try { renderDeptTable(allAssets); } catch (e) { console.error('renderDeptTable error:', e); }
+    try { renderCategoryTable(allAssets); } catch (e) { console.error('renderCategoryTable error:', e); }
+    try { renderReportCharts(allAssets); } catch (e) { console.error('renderReportCharts error:', e); }
+    try { renderRecommendations(allAssets); } catch (e) { console.error('renderRecommendations error:', e); }
+    try { renderCriticalTable(allAssets); } catch (e) { console.error('renderCriticalTable error:', e); }
+  } catch (err) {
+    console.error('loadReport error:', err);
+  } finally {
+    document.getElementById('loadingState')?.classList.add('hidden');
+    document.getElementById('reportContent')?.classList.remove('hidden');
   }
-
-  allAssets = data;
-
-  const now = new Date();
-  document.getElementById('reportDateLabel').textContent = `ข้อมูล ณ วันที่ ${now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}`;
-  document.getElementById('printDate').textContent = `จัดทำ ณ วันที่ ${now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}`;
-
-  renderReportKPIs(allAssets);
-  renderDeptTable(allAssets);
-  renderCategoryTable(allAssets);
-  renderReportCharts(allAssets);
-  renderRecommendations(allAssets);
-  renderCriticalTable(allAssets);
-
-  document.getElementById('loadingState').classList.add('hidden');
-  document.getElementById('reportContent').classList.remove('hidden');
 }
 
 // ---- Category Table (CGD Standard) ----

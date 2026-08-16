@@ -216,20 +216,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadAssets() {
   showLoading(true);
-  const { data, error } = await CAD.supabase
-    .from('assets')
-    .select('*')
-    .order('id', { ascending: true });
+  try {
+    const { data, error } = await CAD.supabase
+      .from('assets')
+      .select('*')
+      .order('id', { ascending: true });
 
-  if (error || !data) {
+    if (error || !data) return;
+    allAssets = data;
+    filteredAssets = [...allAssets];
+    populateFilters(allAssets);
+    renderTable();
+  } catch (err) {
+    console.error('loadAssets error:', err);
+  } finally {
     showLoading(false);
-    return;
   }
-  allAssets = data;
-  filteredAssets = [...allAssets];
-  populateFilters(allAssets);
-  renderTable();
-  showLoading(false);
 }
 
 // ---- Filters ----

@@ -527,20 +527,24 @@ function switchTab(tab) {
 // ============================================================
 async function loadDashboard() {
   showLoading(true);
-  const { data, error } = await CAD.supabase.from('assets').select('*').order('registered_date', { ascending: false });
-  if (error || !data || data.length === 0) {
+  try {
+    const { data, error } = await CAD.supabase.from('assets').select('*').order('registered_date', { ascending: false });
+    if (error || !data || data.length === 0) {
+      document.getElementById('emptyState').classList.remove('hidden');
+      return;
+    }
+    allAssets = data;
+    filteredAssets = [...allAssets];
+    populateFilters(allAssets);
+    const latestDate = allAssets.find(a => a.registered_date)?.registered_date;
+    if (latestDate) document.getElementById('dataDateLabel').textContent = 'ข้อมูล ณ วันที่ ' + formatThaiDate(latestDate);
+    renderDashboard(filteredAssets);
+  } catch (err) {
+    console.error('loadDashboard error:', err);
+  } finally {
     showLoading(false);
-    document.getElementById('emptyState').classList.remove('hidden');
-    return;
+    document.getElementById('dashboardContent')?.classList.remove('hidden');
   }
-  allAssets = data;
-  filteredAssets = [...allAssets];
-  populateFilters(allAssets);
-  const latestDate = allAssets.find(a => a.registered_date)?.registered_date;
-  if (latestDate) document.getElementById('dataDateLabel').textContent = 'ข้อมูล ณ วันที่ ' + formatThaiDate(latestDate);
-  renderDashboard(filteredAssets);
-  showLoading(false);
-  document.getElementById('dashboardContent').classList.remove('hidden');
 }
 
 // ============================================================
@@ -548,17 +552,27 @@ async function loadDashboard() {
 // ============================================================
 function renderDashboard(assets) {
   analyticsRendered = false;
-  renderKPIs(assets);
-  renderChartCondition(assets);
-  renderChartDepartment(assets);
-  renderChartYearTrend(assets);
-  renderChartCategory(assets);
-  renderChartTopAssets(assets);
-  renderChartAgeStatus(assets);
-  renderAlertTable(assets);
-  loadActivityLogs();
-  document.getElementById('topbarTotalCount').textContent = assets.length.toLocaleString() + ' รายการ';
-  if (currentTab === 'analytics') { renderAnalyticsDashboard(assets); analyticsRendered = true; }
+  try { renderKPIs(assets); } catch (e) { console.error('renderKPIs error:', e); }
+  try { renderChartCondition(assets); } catch (e) { console.error('renderChartCondition error:', e); }
+  try { renderChartDepartment(assets); } catch (e) { console.error('renderChartDepartment error:', e); }
+  try { renderChartYearTrend(assets); } catch (e) { console.error('renderChartYearTrend error:', e); }
+  try { renderChartCategory(assets); } catch (e) { console.error('renderChartCategory error:', e); }
+  try { renderChartTopAssets(assets); } catch (e) { console.error('renderChartTopAssets error:', e); }
+  try { renderChartAgeStatus(assets); } catch (e) { console.error('renderChartAgeStatus error:', e); }
+  try { renderAlertTable(assets); } catch (e) { console.error('renderAlertTable error:', e); }
+  try { loadActivityLogs(); } catch (e) { console.error('loadActivityLogs error:', e); }
+  
+  const cntEl = document.getElementById('topbarTotalCount');
+  if (cntEl) cntEl.textContent = assets.length.toLocaleString() + ' รายการ';
+  
+  if (currentTab === 'analytics') {
+    try {
+      renderAnalyticsDashboard(assets);
+      analyticsRendered = true;
+    } catch (e) {
+      console.error('renderAnalyticsDashboard error:', e);
+    }
+  }
 }
 
 // ============================================================
