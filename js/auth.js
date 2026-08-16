@@ -7,11 +7,20 @@
  * Sign in with email/password
  */
 async function signIn(email, password) {
-  const { data, error } = await window.CAD.supabase.auth.signInWithPassword({ email, password });
-  if (!error && data?.user) {
-    await logActivity('login', 'เข้าสู่ระบบสำเร็จ', data.user.id);
+  try {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const { data, error } = await window.CAD.supabase.auth.signInWithPassword({ 
+      email: cleanEmail, 
+      password: password 
+    });
+    if (!error && data?.user) {
+      logActivity('login', 'เข้าสู่ระบบสำเร็จ', data.user.id).catch(() => {});
+    }
+    return { data, error };
+  } catch (err) {
+    console.error('signIn exception:', err);
+    return { data: null, error: err };
   }
-  return { data, error };
 }
 
 /**

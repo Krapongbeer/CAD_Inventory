@@ -46,7 +46,7 @@
       <div class="login-divider"></div>
 
       <!-- Form -->
-      <form id="loginForm" class="login-form" novalidate>
+      <form id="loginForm" class="login-form" onsubmit="handleLoginSubmit(event); return false;" novalidate>
         <div id="loginAlert" class="login-alert hidden" role="alert" aria-live="polite"></div>
 
         <div class="form-group">
@@ -82,13 +82,13 @@
               autocomplete="current-password"
               required
             />
-            <button type="button" id="togglePassword" class="input-toggle" aria-label="แสดง/ซ่อนรหัสผ่าน">
+            <button type="button" id="togglePassword" class="input-toggle" onclick="togglePasswordVisibility()" aria-label="แสดง/ซ่อนรหัสผ่าน">
               <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
         </div>
 
-        <button id="loginBtn" type="submit" class="btn-login">
+        <button id="loginBtn" type="submit" class="btn-login" onclick="handleLoginSubmit(event)">
           <span id="loginBtnText">เข้าสู่ระบบ</span>
           <span id="loginBtnSpinner" class="btn-spinner hidden" aria-hidden="true"></span>
         </button>
@@ -105,55 +105,73 @@
 
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config.js?v=10"></script>
-  <script src="js/auth.js?v=10"></script>
+  <script src="js/config.js?v=11"></script>
+  <script src="js/auth.js?v=11"></script>
   <script>
     // ============================================================
-    // Login Page Logic
+    // Global Login Page Logic
     // ============================================================
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('loginForm');
+    function togglePasswordVisibility() {
+      const passwordInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eyeIcon');
+      if (!passwordInput || !eyeIcon) return;
+      const isHidden = passwordInput.type === 'password';
+      passwordInput.type = isHidden ? 'text' : 'password';
+      eyeIcon.innerHTML = isHidden
+        ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+        : `<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>`;
+    }
+
+    function showAlert(message, type = 'error') {
       const alert = document.getElementById('loginAlert');
+      if (!alert) return;
+      alert.textContent = message;
+      alert.className = `login-alert alert-${type}`;
+    }
+
+    function hideAlert() {
+      const alert = document.getElementById('loginAlert');
+      if (alert) alert.className = 'login-alert hidden';
+    }
+
+    function setLoading(loading) {
       const loginBtn = document.getElementById('loginBtn');
       const loginBtnText = document.getElementById('loginBtnText');
       const loginBtnSpinner = document.getElementById('loginBtnSpinner');
-      const togglePassword = document.getElementById('togglePassword');
-      const passwordInput = document.getElementById('password');
-      const eyeIcon = document.getElementById('eyeIcon');
+      if (loginBtn) loginBtn.disabled = loading;
+      if (loginBtnText) loginBtnText.textContent = loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ';
+      if (loginBtnSpinner) loginBtnSpinner.classList.toggle('hidden', !loading);
+    }
 
-      // 1. ตรวจสอบ Session แบบ Asynchronous โดยไม่บล็อก UI
-      getSession().then(session => {
-        if (session) {
-          window.location.href = 'dashboard.html';
-        }
-      }).catch(err => {
-        console.error("Session check failed:", err);
-      });
+    function getThaiErrorMessage(msg) {
+      if (!msg) return 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+      if (msg.includes('Invalid login credentials')) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
+      if (msg.includes('Email not confirmed')) return 'บัญชีนี้ยังไม่ได้รับการยืนยันอีเมล กรุณาติดต่อผู้ดูแลระบบ';
+      if (msg.includes('User not found')) return 'ไม่พบบัญชีผู้ใช้งานนี้ในระบบ';
+      if (msg.includes('Too many requests')) return 'มีการพยายามเข้าสู่ระบบถี่เกินไป กรุณารอสักครู่แล้วลองใหม่';
+      if (msg.includes('Database error querying schema')) return 'ไม่พบข้อมูลบัญชีหรืออีเมลนี้ในระบบ (กรุณาตรวจสอบการสะกดอีเมล)';
+      return msg;
+    }
 
-      // Toggle password visibility
-      togglePassword.addEventListener('click', () => {
-        const isHidden = passwordInput.type === 'password';
-        passwordInput.type = isHidden ? 'text' : 'password';
-        eyeIcon.innerHTML = isHidden
-          ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
-          : `<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>`;
-      });
+    async function handleLoginSubmit(e) {
+      if (e && e.preventDefault) e.preventDefault();
 
-      // Form submit
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+      const emailEl = document.getElementById('email');
+      const passwordEl = document.getElementById('password');
+      if (!emailEl || !passwordEl) return;
 
-        const email = document.getElementById('email').value.trim().toLowerCase();
-        const password = document.getElementById('password').value;
+      const email = emailEl.value.trim().toLowerCase();
+      const password = passwordEl.value;
 
-        if (!email || !password) {
-          showAlert('กรุณากรอกอีเมลและรหัสผ่าน', 'error');
-          return;
-        }
+      if (!email || !password) {
+        showAlert('กรุณากรอกอีเมลและรหัสผ่าน', 'error');
+        return;
+      }
 
-        setLoading(true);
-        hideAlert();
+      setLoading(true);
+      hideAlert();
 
+      try {
         const { data, error } = await signIn(email, password);
 
         if (error) {
@@ -162,40 +180,46 @@
           return;
         }
 
-        // Login success — redirect (supports both HTTP server and file:// origin)
+        // Login success — redirect
         if (window.location.protocol === 'file:' && data?.session?.access_token) {
           const hash = `#access_token=${data.session.access_token}&refresh_token=${data.session.refresh_token}&token_type=bearer&type=recovery`;
           window.location.href = `dashboard.html${hash}`;
         } else {
           window.location.href = 'dashboard.html';
         }
-      });
-
-      function showAlert(message, type = 'error') {
-        alert.textContent = message;
-        alert.className = `login-alert alert-${type}`;
+      } catch (err) {
+        setLoading(false);
+        showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message, 'error');
       }
+    }
 
-      function hideAlert() {
-        alert.className = 'login-alert hidden';
-      }
+    // Auto-login from query params or check session
+    (function initLogin() {
+      const params = new URLSearchParams(window.location.search);
+      const queryEmail = params.get('email');
+      const queryPwd = params.get('password');
 
-      function setLoading(loading) {
-        loginBtn.disabled = loading;
-        loginBtnText.textContent = loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ';
-        loginBtnSpinner.classList.toggle('hidden', !loading);
+      if (queryEmail && queryPwd) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setTimeout(() => {
+          const emailEl = document.getElementById('email');
+          const pwdEl = document.getElementById('password');
+          if (emailEl && pwdEl) {
+            emailEl.value = queryEmail;
+            pwdEl.value = queryPwd;
+            handleLoginSubmit();
+          }
+        }, 100);
+      } else {
+        getSession().then(session => {
+          if (session) {
+            window.location.href = 'dashboard.html';
+          }
+        }).catch(err => {
+          console.error("Session check failed:", err);
+        });
       }
-
-      function getThaiErrorMessage(msg) {
-        if (!msg) return 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
-        if (msg.includes('Invalid login credentials')) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
-        if (msg.includes('Email not confirmed')) return 'บัญชีนี้ยังไม่ได้รับการยืนยันอีเมล กรุณาติดต่อผู้ดูแลระบบ';
-        if (msg.includes('User not found')) return 'ไม่พบบัญชีผู้ใช้งานนี้ในระบบ';
-        if (msg.includes('Too many requests')) return 'มีการพยายามเข้าสู่ระบบถี่เกินไป กรุณารอสักครู่แล้วลองใหม่';
-        if (msg.includes('Database error querying schema')) return 'ไม่พบข้อมูลบัญชีหรืออีเมลนี้ในระบบ (กรุณาตรวจสอบการสะกดอีเมล)';
-        return msg;
-      }
-    });
+    })();
   </script>
 </body>
 </html>
