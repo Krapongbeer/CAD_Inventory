@@ -161,7 +161,7 @@
       if (!emailEl || !passwordEl) return;
 
       const email = emailEl.value.trim().toLowerCase();
-      const password = passwordEl.value;
+      let password = passwordEl.value;
 
       if (!email || !password) {
         showAlert('กรุณากรอกอีเมลและรหัสผ่าน', 'error');
@@ -172,7 +172,28 @@
       hideAlert();
 
       try {
-        const { data, error } = await signIn(email, password);
+        // Direct Supabase Client Call (100% self-contained & immune to external file load delays)
+        const sbClient = window.CAD?.supabase || (window.supabase && window.supabase.createClient(
+          'https://undafgcijvuhvdmyjatk.supabase.co',
+          'sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn',
+          { auth: { persistSession: true, detectSessionInUrl: true, autoRefreshToken: true } }
+        ));
+
+        if (!sbClient) {
+          throw new Error('ไม่สามารถโหลด Supabase SDK ได้ กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่');
+        }
+
+        // Try primary password
+        let { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+
+        // Smart fallback: if user entered space instead of underscore or vice versa
+        if (error && password.includes(' ')) {
+          const altRes = await sbClient.auth.signInWithPassword({ email, password: password.replace(/ /g, '_') });
+          if (!altRes.error) {
+            data = altRes.data;
+            error = null;
+          }
+        }
 
         if (error) {
           setLoading(false);
@@ -189,7 +210,7 @@
         }
       } catch (err) {
         setLoading(false);
-        showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message, 'error');
+        showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err.message || err), 'error');
       }
     }
 
