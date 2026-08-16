@@ -226,6 +226,25 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="editUserId" />
+
+      <!-- User Info Header Pill -->
+      <div style="background:var(--bg-hover); border:1px solid var(--border-color); border-radius:10px; padding:0.85rem 1rem; display:flex; align-items:center; gap:0.85rem; margin-bottom:1.25rem;">
+        <div id="editModalAvatar" style="width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg, var(--cmu-purple-mid), var(--cmu-purple-light)); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1rem; flex-shrink:0;">?</div>
+        <div>
+          <div id="editModalHeaderName" style="font-weight:700; font-size:0.95rem; color:var(--text-primary);">ชื่อผู้ใช้งาน</div>
+          <div id="editModalHeaderEmail" style="font-size:0.8rem; color:var(--text-muted); display:flex; align-items:center; gap:0.3rem; margin-top:0.15rem;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <span id="editModalEmailText">email@cmu.ac.th</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Email Field -->
+      <div class="form-group">
+        <label class="form-label" for="editEmail">อีเมล (CMU Email / Account Email) <span class="required">*</span></label>
+        <input type="email" id="editEmail" class="form-input" placeholder="user@cmu.ac.th" required autocomplete="off" />
+        <span class="form-helper">อีเมลที่ใช้สำหรับลงชื่อเข้าใช้งานระบบ</span>
+      </div>
       
       <!-- Full Name -->
       <div class="form-group">
@@ -369,12 +388,20 @@ async function loadUsers() {
   try {
     const { data: roles, error } = await CAD.supabase
       .from('user_roles')
-      .select('id, user_id, role, full_name, created_at')
+      .select('id, user_id, role, full_name, email, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
     allUsersList = roles || [];
+    
+    // If logged-in user doesn't have email in user_roles, fallback to session email
+    allUsersList.forEach(u => {
+      if (!u.email && u.user_id === currentUserData?.session?.user?.id) {
+        u.email = currentUserData?.session?.user?.email;
+      }
+    });
+
     renderUsersTable(allUsersList);
   } catch (err) {
     console.error('Load users error:', err);
@@ -404,27 +431,32 @@ function renderUsersTable(users) {
   tbody.innerHTML = users.map((u, i) => {
     const meta = roleMeta[u.role] || { label: u.role || 'User', bg: 'var(--bg-hover)', col: 'var(--text-secondary)', icon: '👤' };
     const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' }) : '-';
-    const initial = (u.full_name || '?').charAt(0).toUpperCase();
+    const initial = (u.full_name || u.email || '?').charAt(0).toUpperCase();
+    const displayEmail = u.email || 'ไม่ระบุอีเมล';
 
     return `
       <tr>
         <td style="font-weight:600; color:var(--text-muted); font-size:0.8rem;">${i + 1}</td>
         <td>
-          <div style="display:flex; align-items:center; gap:0.65rem;">
-            <div style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg, var(--cmu-purple-mid), var(--cmu-purple-light)); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; flex-shrink:0;">${initial}</div>
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, var(--cmu-purple-mid), var(--cmu-purple-light)); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.88rem; flex-shrink:0;">${initial}</div>
             <div>
-              <div style="font-weight:600; font-size:0.88rem; color:var(--text-primary);">${escHtml(u.full_name || '-')}</div>
+              <div style="font-weight:600; font-size:0.92rem; color:var(--text-primary);">${escHtml(u.full_name || '-')}</div>
+              <div style="font-size:0.78rem; color:var(--text-muted); display:inline-flex; align-items:center; gap:0.3rem; margin-top:0.2rem; background:var(--bg-hover); padding:0.12rem 0.5rem; border-radius:4px; border:1px solid var(--border-color);">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                <span>${escHtml(displayEmail)}</span>
+              </div>
             </div>
           </div>
         </td>
         <td>
-          <span style="display:inline-flex; align-items:center; gap:0.3rem; padding:0.2rem 0.65rem; border-radius:99px; font-size:0.72rem; font-weight:600; background:${meta.bg}; color:${meta.col};">
+          <span style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.75rem; border-radius:99px; font-size:0.75rem; font-weight:600; background:${meta.bg}; color:${meta.col};">
             <span>${meta.icon}</span> ${escHtml(meta.label)}
           </span>
         </td>
         <td style="font-size:0.82rem; color:var(--text-secondary);">${dateStr}</td>
         <td style="text-align:right;">
-          <button class="btn btn-secondary btn-sm" onclick="openEditUserModal('${u.user_id}', '${escHtml(u.full_name||'')}', '${u.role}')" style="padding:0.35rem 0.85rem; font-size:0.78rem; border-radius:6px;">
+          <button class="btn btn-secondary btn-sm" onclick="openEditUserModal('${u.user_id}', '${escHtml(u.full_name||'')}', '${u.role}', '${escHtml(u.email||'')}')" style="padding:0.4rem 0.9rem; font-size:0.8rem; border-radius:6px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.25rem;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             แก้ไขบัญชี &amp; สิทธิ์
           </button>
@@ -442,6 +474,7 @@ function filterUserList() {
   }
   const filtered = allUsersList.filter(u => 
     (u.full_name || '').toLowerCase().includes(q) ||
+    (u.email || '').toLowerCase().includes(q) ||
     (u.role || '').toLowerCase().includes(q)
   );
   renderUsersTable(filtered);
@@ -497,11 +530,19 @@ async function submitAddUser() {
 }
 
 // Edit User
-function openEditUserModal(userId, fullName, currentRole) {
+function openEditUserModal(userId, fullName, currentRole, email = '') {
   document.getElementById('editUserId').value = userId;
   document.getElementById('editFullName').value = fullName;
+  document.getElementById('editEmail').value = email;
   document.getElementById('editRoleSelect').value = currentRole || 'staff';
   document.getElementById('editNewPassword').value = '';
+
+  // Update header info pill
+  const initial = (fullName || email || '?').charAt(0).toUpperCase();
+  document.getElementById('editModalAvatar').textContent = initial;
+  document.getElementById('editModalHeaderName').textContent = fullName || 'ผู้ใช้งาน';
+  document.getElementById('editModalEmailText').textContent = email || 'ไม่ระบุอีเมล';
+
   document.getElementById('editUserModal').classList.remove('hidden');
 }
 
@@ -512,12 +553,17 @@ function closeEditUserModal() {
 async function submitEditUser() {
   const userId = document.getElementById('editUserId').value;
   const newName = document.getElementById('editFullName').value.trim();
+  const newEmail = document.getElementById('editEmail').value.trim();
   const newRole = document.getElementById('editRoleSelect').value;
   const newPassword = document.getElementById('editNewPassword').value.trim();
   const btn = document.getElementById('btnSaveEditUser');
 
   if (!newName) {
     alert('กรุณาระบุชื่อ-นามสกุล');
+    return;
+  }
+  if (!newEmail) {
+    alert('กรุณาระบุอีเมล');
     return;
   }
   if (newPassword && newPassword.length < 6) {
@@ -529,20 +575,20 @@ async function submitEditUser() {
   btn.textContent = 'กำลังบันทึก...';
 
   try {
-    // 1. Try calling the dedicated RPC admin_update_user
-    const { data, error } = await adminUpdateUser(userId, newName, newRole, newPassword || null);
+    // 1. Try calling the dedicated RPC admin_update_user with email
+    const { data, error } = await adminUpdateUser(userId, newName, newRole, newPassword || null, newEmail || null);
     
     if (error) {
       // Fallback: direct update in user_roles table
       const { error: fbErr } = await CAD.supabase
         .from('user_roles')
-        .update({ full_name: newName, role: newRole })
+        .update({ full_name: newName, role: newRole, email: newEmail })
         .eq('user_id', userId);
       
       if (fbErr) throw fbErr;
     }
 
-    await logActivity('update_user', `แก้ไขบัญชีผู้ใช้: ${newName} (Role: ${newRole}${newPassword ? ', รีเซ็ตรหัสผ่าน' : ''})`);
+    await logActivity('update_user', `แก้ไขบัญชีผู้ใช้: ${newName} (Role: ${newRole}, อีเมล: ${newEmail}${newPassword ? ', รีเซ็ตรหัสผ่าน' : ''})`);
     closeEditUserModal();
     await loadUsers();
     alert('บันทึกการแก้ไขสำเร็จ');

@@ -176,12 +176,13 @@ async function adminCreateUser(email, password, fullName, userRole) {
   return { data, error };
 }
 
-async function adminUpdateUser(targetUserId, newFullName, newRole, newPassword = null) {
+async function adminUpdateUser(targetUserId, newFullName, newRole, newPassword = null, newEmail = null) {
   const { data, error } = await window.CAD.supabase.rpc('admin_update_user', {
     target_user_id: targetUserId,
     new_full_name: newFullName,
     new_role: newRole,
-    new_password: newPassword || null
+    new_password: newPassword || null,
+    new_email: newEmail || null
   });
   return { data, error };
 }

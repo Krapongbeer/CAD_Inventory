@@ -3,10 +3,18 @@
 -- Run this entire script in Supabase Dashboard > SQL Editor > New query
 -- ================================================================
 
--- 1. อัปเดต Table & Check Constraint ของ user_roles ให้รองรับทุก Role
+-- 1. อัปเดต Table & Check Constraint ของ user_roles ให้รองรับทุก Role และเพิ่มคอลัมน์ email
 ALTER TABLE public.user_roles DROP CONSTRAINT IF EXISTS user_roles_role_check;
 ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_role_check 
   CHECK (role IN ('superadmin', 'admin', 'staff', 'executive', 'editor', 'viewer'));
+
+ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS email TEXT;
+
+-- ซิงค์อีเมลจาก auth.users มายัง user_roles สำหรับบัญชีที่มีอยู่เดิม
+UPDATE public.user_roles ur
+SET email = au.email
+FROM auth.users au
+WHERE ur.user_id = au.id AND (ur.email IS NULL OR ur.email = '');
 
 -- 2. สร้างตาราง activity_logs (Audit Log) หากยังไม่มี
 CREATE TABLE IF NOT EXISTS public.activity_logs (
@@ -84,10 +92,10 @@ BEGIN
   ) RETURNING id INTO new_user_id;
 
   -- อัปเดต/แทรกใน user_roles
-  INSERT INTO public.user_roles (user_id, role, full_name)
-  VALUES (new_user_id, user_role, full_name)
+  INSERT INTO public.user_roles (user_id, role, full_name, email)
+  VALUES (new_user_id, user_role, full_name, email)
   ON CONFLICT (user_id) DO UPDATE
-  SET role = user_role, full_name = full_name;
+  SET role = user_role, full_name = full_name, email = email;
 
   -- บันทึก Audit Log
   INSERT INTO public.activity_logs (user_id, action, details)
@@ -102,7 +110,8 @@ CREATE OR REPLACE FUNCTION public.admin_update_user(
   target_user_id UUID,
   new_full_name TEXT,
   new_role TEXT,
-  new_password TEXT DEFAULT NULL
+  new_password TEXT DEFAULT NULL,
+  new_email TEXT DEFAULT NULL
 ) RETURNS JSONB AS $$
 DECLARE
   caller_role TEXT;
@@ -120,12 +129,14 @@ BEGIN
   -- 1. อัปเดตใน user_roles
   UPDATE public.user_roles 
   SET full_name = new_full_name,
-      role = new_role
+      role = new_role,
+      email = COALESCE(new_email, email)
   WHERE user_id = target_user_id;
 
   -- 2. อัปเดต metadata ใน auth.users
   UPDATE auth.users 
-  SET raw_user_meta_data = jsonb_set(COALESCE(raw_user_meta_data, '{}'::jsonb), '{full_name}', to_jsonb(new_full_name))
+  SET raw_user_meta_data = jsonb_set(COALESCE(raw_user_meta_data, '{}'::jsonb), '{full_name}', to_jsonb(new_full_name)),
+      email = COALESCE(new_email, email)
   WHERE id = target_user_id;
 
   -- 3. หากมีการระบุรหัสผ่านใหม่ (Password Reset)
@@ -138,7 +149,7 @@ BEGIN
 
   -- บันทึก Audit Log
   INSERT INTO public.activity_logs (user_id, action, details)
-  VALUES (auth.uid(), 'update_user', 'แก้ไขผู้ใช้: ' || old_name || ' -> ' || new_full_name || ' (Role: ' || old_role || ' -> ' || new_role || CASE WHEN new_password IS NOT NULL AND length(trim(new_password)) >= 6 THEN ', รีเซ็ตรหัสผ่านใหม่' ELSE '' END || ')');
+  VALUES (auth.uid(), 'update_user', 'แก้ไขผู้ใช้: ' || old_name || ' -> ' || new_full_name || ' (Role: ' || old_role || ' -> ' || new_role || CASE WHEN new_email IS NOT NULL THEN ', อีเมล: ' || new_email ELSE '' END || CASE WHEN new_password IS NOT NULL AND length(trim(new_password)) >= 6 THEN ', รีเซ็ตรหัสผ่านใหม่' ELSE '' END || ')');
 
   RETURN jsonb_build_object('success', true, 'message', 'User updated successfully');
 END;
