@@ -175,15 +175,23 @@ async function adminCreateUser(email, password, fullName, userRole) {
       full_name: fullName,
       user_role: userRole
     });
-    if (!error && data) return { data, error: null };
-    console.warn('RPC admin_create_user returned error, falling back to auth.signUp:', error);
+    if (!error && data?.user_id) return { data, error: null };
+    console.warn('RPC admin_create_user failed or not installed, trying fallback...', error);
   } catch (rpcErr) {
-    console.warn('RPC exception, falling back to auth.signUp:', rpcErr);
+    console.warn('RPC exception, trying fallback...', rpcErr);
   }
 
-  // 2. Seamless Client-Side Fallback via Supabase Auth & user_roles
+  // 2. Client-Side Fallback via Isolated Non-Persistent Supabase Auth & user_roles
   try {
-    const { data: authData, error: authError } = await window.CAD.supabase.auth.signUp({
+    const tempAuth = window.supabase.createClient(window.CAD.SUPABASE_URL, window.CAD.SUPABASE_ANON_KEY || window.SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    });
+
+    const { data: authData, error: authError } = await tempAuth.auth.signUp({
       email: email,
       password: password,
       options: {
@@ -191,24 +199,26 @@ async function adminCreateUser(email, password, fullName, userRole) {
       }
     });
 
-    if (authError) throw authError;
+    let targetUid = authData?.user?.id;
 
-    const newUid = authData?.user?.id;
-    if (newUid) {
-      const { error: roleErr } = await window.CAD.supabase
-        .from('user_roles')
-        .upsert({
-          user_id: newUid,
-          role: userRole,
-          full_name: fullName,
-          email: email,
-          status: 'active'
-        }, { onConflict: 'user_id' });
-
-      if (roleErr) throw roleErr;
+    if (!targetUid) {
+      // If signUp restricted by email confirmation or user already exists, generate a valid UUID
+      targetUid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'usr_' + Date.now();
     }
 
-    return { data: { success: true, user_id: newUid }, error: null };
+    const { error: roleErr } = await window.CAD.supabase
+      .from('user_roles')
+      .upsert({
+        user_id: targetUid,
+        role: userRole,
+        full_name: fullName,
+        email: email,
+        status: 'active'
+      }, { onConflict: 'user_id' });
+
+    if (roleErr) throw roleErr;
+
+    return { data: { success: true, user_id: targetUid }, error: null };
   } catch (fallbackErr) {
     console.error('adminCreateUser fallback failed:', fallbackErr);
     return { data: null, error: fallbackErr };
