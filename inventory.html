@@ -93,6 +93,16 @@
       <!-- Filter Bar -->
       <div class="filter-bar">
         <span class="filter-label">กรอง:</span>
+        <select id="filterCategory" class="filter-select" onchange="applyFilters()">
+          <option value="">ทุกหมวดหมู่ (กรมบัญชีกลาง)</option>
+          <option value="computer">💻 ครุภัณฑ์คอมพิวเตอร์และ IT</option>
+          <option value="office">🪑 ครุภัณฑ์สำนักงานและเฟอร์นิเจอร์</option>
+          <option value="audio">📽️ ครุภัณฑ์โสตทัศนูปกรณ์</option>
+          <option value="electrical">❄️ ครุภัณฑ์ไฟฟ้า &amp; แอร์</option>
+          <option value="vehicle">🚗 ครุภัณฑ์ยานพาหนะ</option>
+          <option value="scientific">🔬 ครุภัณฑ์วิทยาศาสตร์/การศึกษา</option>
+          <option value="other">📦 ครุภัณฑ์อื่นๆ</option>
+        </select>
         <select id="filterDept" class="filter-select" onchange="applyFilters()">
           <option value="">งานทั้งหมด</option>
         </select>
@@ -113,7 +123,7 @@
         </select>
         <div class="filter-search">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input id="filterSearch" type="search" placeholder="ค้นหาชื่อ, คีย์, ผู้ดูแล..." oninput="applyFilters()" />
+          <input id="filterSearch" type="search" placeholder="ค้นหาชื่อ, คีย์, หมวดหมู่, ผู้ดูแล..." oninput="applyFilters()" />
         </div>
         <button class="btn-filter-reset" onclick="resetFilters()">ล้าง</button>
       </div>
@@ -201,9 +211,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.nav-admin').forEach(el => el.style.display = '');
   }
   await populateNavUser();
-  const nameEl = document.getElementById('navUserName');
-  const avatarEl = document.getElementById('userAvatar');
-  if (avatarEl && nameEl) avatarEl.textContent = (nameEl.textContent || '?').charAt(0).toUpperCase();
   await loadAssets();
 });
 
@@ -245,6 +252,7 @@ function normalizeBuilding(b) {
 }
 
 function applyFilters() {
+  const category = document.getElementById('filterCategory').value;
   const dept = document.getElementById('filterDept').value;
   const condition = document.getElementById('filterCondition').value;
   const age = document.getElementById('filterAge').value;
@@ -252,11 +260,13 @@ function applyFilters() {
   const search = document.getElementById('filterSearch').value.toLowerCase().trim();
 
   filteredAssets = allAssets.filter(a => {
+    const cat = CAD.getAssetCategory(a.name, a.detail, a.brand);
+    if (category && cat.id !== category) return false;
     if (dept && a.department !== dept) return false;
     if (condition && a.condition !== condition) return false;
     if (building && normalizeBuilding(a.building) !== building) return false;
     if (age) {
-      const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
+      const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id, a.detail, a.brand);
       if (status !== age) return false;
     }
     if (search && !(
@@ -264,7 +274,9 @@ function applyFilters() {
       (a.asset_key || '').toLowerCase().includes(search) ||
       (a.assignee || '').toLowerCase().includes(search) ||
       (a.owner || '').toLowerCase().includes(search) ||
-      (a.description_sys || '').toLowerCase().includes(search)
+      (a.description_sys || '').toLowerCase().includes(search) ||
+      (cat.label || '').toLowerCase().includes(search) ||
+      (cat.shortLabel || '').toLowerCase().includes(search)
     )) return false;
     return true;
   });
@@ -274,6 +286,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
+  document.getElementById('filterCategory').value = '';
   document.getElementById('filterDept').value = '';
   document.getElementById('filterCondition').value = '';
   document.getElementById('filterAge').value = '';
@@ -293,7 +306,6 @@ function sortBy(key) {
 
 // ---- Render Table ----
 function renderTable() {
-  // Sort
   const sorted = [...filteredAssets].sort((a, b) => {
     let va = a[sortKey] ?? '';
     let vb = b[sortKey] ?? '';
@@ -301,7 +313,6 @@ function renderTable() {
     return sortDir === 'asc' ? String(va).localeCompare(String(vb), 'th') : String(vb).localeCompare(String(va), 'th');
   });
 
-  // Paginate
   const total = sorted.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   currentPage = Math.min(currentPage, totalPages);
@@ -312,7 +323,7 @@ function renderTable() {
 
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = pageItems.map(a => {
-    const { status, label } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
+    const { status, label, category } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id, a.detail, a.brand);
     const condBadge = getConditionBadge(a.condition);
     const ageBadge = `<span class="badge age-badge-${status}" style="cursor:pointer;">${label}</span>`;
     const dateFormatted = formatDate(a.registered_date);
@@ -320,31 +331,36 @@ function renderTable() {
       <tr onclick="openDetail(${JSON.stringify(a).replace(/"/g,'&quot;')})" style="cursor:pointer;">
         <td style="font-size:0.75rem;color:var(--gray-400);">${a.id || '-'}</td>
         <td style="font-family:monospace;font-size:0.7rem;color:var(--gray-500);">${escHtml(a.asset_key || '-')}</td>
-        <td><strong style="color:var(--gray-800);">${escHtml(a.name || '-')}</strong><br/><span style="font-size:0.7rem;color:var(--gray-400);">${escHtml((a.brand || '') + (a.model ? ' ' + a.model : ''))}</span></td>
+        <td>
+          <div style="font-weight:600; color:var(--text-primary); font-size:0.88rem;">${escHtml(a.name || '-')}</div>
+          <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:0.25rem;">
+            <span style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.7rem; font-weight:600; padding:0.12rem 0.45rem; border-radius:4px; background:${category.bg}; color:${category.color}; border:1px solid ${category.border};">
+              <span>${category.icon}</span> ${escHtml(category.shortLabel)}
+            </span>
+            ${(a.brand || a.model) ? `<span style="font-size:0.72rem; color:var(--text-muted);">${escHtml((a.brand || '') + (a.model ? ' ' + a.model : ''))}</span>` : ''}
+          </div>
+        </td>
         <td style="font-size:0.85rem;">${escHtml(shortenDeptName(a.department || '-'))}</td>
         <td>${condBadge}</td>
         <td style="font-size:0.85rem;white-space:nowrap;">${dateFormatted}</td>
         <td>${ageBadge}</td>
-        <td style="text-align:right;font-size:0.85rem;">${a.cost ? a.cost.toLocaleString() : '-'}</td>
+        <td style="text-align:right;font-size:0.85rem;font-weight:600;">${a.cost ? a.cost.toLocaleString() : '-'}</td>
         <td style="font-size:0.8rem;color:var(--gray-600);">${escHtml((a.building || '-').slice(0,20))}${(a.building || '').length > 20 ? '…' : ''}</td>
         <td style="font-size:0.82rem;">${escHtml(a.assignee || a.owner || '-')}</td>
       </tr>
     `;
   }).join('');
 
-  // Pagination
   document.getElementById('paginationInfo').textContent =
     `แสดง ${start+1}–${Math.min(start+PAGE_SIZE, total)} จาก ${total.toLocaleString()} รายการ`;
 
   const controls = document.getElementById('paginationControls');
   let pageBtns = `<button class="btn-page" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
-
   const range = getPageRange(currentPage, totalPages);
   range.forEach(p => {
     if (p === '…') pageBtns += `<span class="btn-page" style="cursor:default;">…</span>`;
     else pageBtns += `<button class="btn-page ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
   });
-
   pageBtns += `<button class="btn-page" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
   controls.innerHTML = pageBtns;
 }
@@ -367,11 +383,12 @@ function getPageRange(current, total) {
 // ---- Detail Modal ----
 function openDetail(asset) {
   document.getElementById('detailModalTitle').textContent = asset.name || 'รายละเอียดครุภัณฑ์';
-  const { status, label } = CAD.getAssetAgeStatus(asset.registered_date, asset.name, asset.asset_id);
+  const { status, label, category } = CAD.getAssetAgeStatus(asset.registered_date, asset.name, asset.asset_id, asset.detail, asset.brand);
 
   const rows = [
     ['ID', asset.id],
     ['คีย์สินทรัพย์', asset.asset_key],
+    ['หมวดหมู่มาตรฐาน', `${category.icon} ${category.label}`],
     ['วันที่ขึ้นทะเบียน', formatDate(asset.registered_date)],
     ['ราคาทุน', asset.cost ? asset.cost.toLocaleString() + ' บาท' : '-'],
     ['ยี่ห้อ/รุ่น', [asset.brand, asset.model].filter(Boolean).join(' ') || '-'],
@@ -380,6 +397,7 @@ function openDetail(asset) {
     ['งาน', asset.department],
     ['สภาพ', asset.condition],
     ['อายุการใช้งาน', label],
+    ['เกณฑ์อายุการใช้งานมาตรฐาน', `แจ้งเตือน: ${category.warningYears} ปี / เสื่อมสภาพ: ${category.criticalYears} ปี`],
     ['อาคาร', asset.building],
     ['ชั้น', asset.floor],
     ['ห้อง', asset.room],

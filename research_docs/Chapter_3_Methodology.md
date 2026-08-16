@@ -50,19 +50,20 @@ graph TD
 
 ---
 
-## 3.2 การออกแบบโครงสร้างฐานข้อมูล (Database Schema Design)
+## 3.2 การออกแบบโครงสร้างฐานข้อมูล (Database Schema Design; PostgreSQL Global Development Group, 2024)
 
-ฐานข้อมูลได้รับการออกแบบบน PostgreSQL 15+ ประกอบด้วย 4 ตารางหลัก ได้แก่:
+ฐานข้อมูลได้รับการออกแบบบน PostgreSQL 15+ ภายใต้สถาปัตยกรรมรวมศูนย์ในไฟล์ Master Schema [`database/schema.sql`](../database/schema.sql) ประกอบด้วย 4 ตารางหลัก ได้แก่:
 
-### 3.2.1 ตาราง `user_roles` (การจัดการบทบาทผู้ใช้งาน)
-ใช้กำหนดและตรวจสอบสิทธิ์ของผู้ใช้งานแต่ละบัญชี โดยอ้างอิง foreign key ไปยังระบบ `auth.users` ของ Supabase
+### 3.2.1 ตาราง `user_roles` (การจัดการบทบาทผู้ใช้งานและการควบคุมการเข้าถึง)
+ใช้กำหนดและตรวจสอบสิทธิ์ของผู้ใช้งานแต่ละบัญชีตามมาตรฐาน Role-Based Access Control (RBAC; Sandhu et al., 1996) โดยอ้างอิง foreign key ไปยังระบบ `auth.users` ของ Supabase พร้อมจัดเก็บอีเมลเพื่อความสะดวกรวดเร็วในการบริหารจัดการ
 
 ```sql
-CREATE TABLE IF NOT EXISTS user_roles (
+CREATE TABLE IF NOT EXISTS public.user_roles (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  role       TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'staff', 'executive')),
+  role       TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'staff', 'executive', 'editor', 'viewer')),
   full_name  TEXT,
+  email      TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
@@ -204,7 +205,13 @@ function calcDepreciation(asset) {
 
 1. **Tab 1: ภาพรวม (Overview):**
    - **8 KPI Cards:** ครุภัณฑ์ทั้งหมด, มูลค่าราคาทุนรวม, มูลค่าคงเหลือสุทธิ, สภาพดี, สภาพปานกลาง, ชำรุด, เกินอายุกำหนด, มูลค่าเฉลี่ยต่อรายการ
-   - **5 Interactive Charts:** สัดส่วนตามสภาพ (Doughnut), จำนวนแยกตามงาน (Bar), แนวโน้มการจัดซื้อตามปี (Dual-Axis Line), Top 10 ประเภทครุภัณฑ์ (Horizontal Bar), สถานะอายุการใช้งาน (Doughnut)
+   - **6 Interactive Charts with Full Drill-Down:** 
+     1. สัดส่วนตามสภาพ (Doughnut)
+     2. จำนวนแยกตามงาน (Bar)
+     3. แนวโน้มการจัดซื้อตามปีและมูลค่า (Dual-Axis Line)
+     4. **สัดส่วนตามหมวดหมู่มาตรฐานกรมบัญชีกลาง (CGD Category Breakdown Doughnut)**
+     5. Top 10 ชนิดครุภัณฑ์ที่มีจำนวนมากที่สุด (Horizontal Bar)
+     6. สถานะอายุการใช้งาน (Doughnut with Legend Metrics)
    - **Alert Action Table:** ตารางครุภัณฑ์ที่ชำรุดหรือเกินอายุการใช้งานที่ต้องดำเนินการ
    - **Audit Activity Log Table:** ตารางแสดงประวัติการทำงานล่าสุดในระบบ
 2. **Tab 2: วิเคราะห์เชิงลึก (Deep Analytics):**
@@ -220,9 +227,13 @@ function calcDepreciation(asset) {
 
 ---
 
-## 3.5 มาตรการความมั่นคงปลอดภัยและการทดสอบ (Security Hardening & Testing)
+## 3.5 มาตรการความมั่นคงปลอดภัยและการทดสอบ (Security Hardening & Testing; NIST, 2020; OWASP Foundation, 2021)
 
-1. **การควบคุมการสร้างผู้ใช้ผ่าน Database Function:** ใช้ Stored Procedure `admin_create_user(email, password, full_name, user_role)` ที่ฝังคำสั่งตรวจสอบว่าผู้เรียกต้องมีบทบาท `superadmin` หรือ `admin` เท่านั้น
-2. **Cross-Site Scripting (XSS) Sanitization:** ฟังก์ชัน `escHtml()` แปลงอักขระ `&`, `<`, `>`, `"`, `'` เพื่อป้องกันการฝัง Payload ในชื่อครุภัณฑ์หรือหมายเหตุ
+1. **การควบคุมการสร้าง/แก้ไข/ลบผู้ใช้ผ่าน Database Function:** ใช้ Stored Procedures ที่มีคำสั่ง `SECURITY DEFINER` ได้แก่ `admin_create_user`, `admin_update_user`, `admin_delete_user` ที่ฝังคำสั่งตรวจสอบว่าผู้เรียกต้องมีบทบาท `superadmin` หรือ `admin` เท่านั้น
+2. **Cross-Site Scripting (XSS) Sanitization:** ฟังก์ชัน `escHtml()` แปลงอักขระ `&`, `<`, `>`, `"`, `'` เพื่อป้องกันการฝัง Payload ในชื่อครุภัณฑ์หรือหมายเหตุ ตามข้อแนะนำ OWASP A03:2021 Injection (OWASP Foundation, 2021)
 3. **Content Security Policy (CSP):** กำหนดนโยบายจำกัดเฉพาะโดเมนของ Supabase, CDN ของ Google Fonts, Chart.js และ jsDelivr
 4. **Git Repository Sanitization:** กำหนด `.gitignore` เพื่อป้องกันการ Commit ข้อมูลไฟล์ Excel, ไฟล์สำรองฐานข้อมูล และโฟลเดอร์งานวิจัยขึ้นสู่ระบบควบคุมเวอร์ชันสาธารณะ
+
+---
+
+*(ดูรายการเอกสารอ้างอิงฉบับสมบูรณ์ตามมาตรฐาน APA 7th Edition ได้ที่ [References_APA.md](References_APA.md))*

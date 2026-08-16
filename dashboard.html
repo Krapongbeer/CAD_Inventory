@@ -190,18 +190,19 @@
             </div>
           </div>
 
-          <!-- Charts Row 2: Top Assets + Age Status -->
+          <!-- Charts Row 2: Category Breakdown + Age Status -->
           <div class="charts-grid">
             <div class="section-card">
               <div class="section-card-header">
                 <h2 class="section-card-title">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-                  Top 10 ประเภทครุภัณฑ์
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  สัดส่วนตามหมวดหมู่ (มาตรฐานกรมบัญชีกลาง)
                 </h2>
-                <span class="chart-hint-label">คลิก Bar เพื่อดูรายการ</span>
+                <span class="chart-hint-label">คลิกเพื่อดูรายการ</span>
               </div>
               <div class="section-card-body">
-                <div class="chart-wrap" style="height:300px;"><canvas id="chartTopAssets" aria-label="กราฟ Top 10 ครุภัณฑ์" role="img"></canvas></div>
+                <div class="chart-wrap" style="height:250px;"><canvas id="chartCategory" aria-label="กราฟหมวดหมู่ครุภัณฑ์" role="img"></canvas></div>
+                <div id="categorySummaryGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:0.4rem; margin-top:0.85rem;"></div>
               </div>
             </div>
             <div class="section-card">
@@ -216,6 +217,20 @@
                 <div class="chart-wrap" style="height:200px;"><canvas id="chartAgeStatus" aria-label="กราฟสถานะอายุการใช้งาน" role="img"></canvas></div>
                 <div id="ageLegend" style="margin-top:1rem;"></div>
               </div>
+            </div>
+          </div>
+
+          <!-- Charts Row 3: Top Assets -->
+          <div class="section-card">
+            <div class="section-card-header">
+              <h2 class="section-card-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                Top 10 ชนิดครุภัณฑ์ที่มีจำนวนมากที่สุด
+              </h2>
+              <span class="chart-hint-label">คลิก Bar เพื่อดูรายการ</span>
+            </div>
+            <div class="section-card-body">
+              <div class="chart-wrap" style="height:260px;"><canvas id="chartTopAssets" aria-label="กราฟ Top 10 ครุภัณฑ์" role="img"></canvas></div>
             </div>
           </div>
 
@@ -537,6 +552,7 @@ function renderDashboard(assets) {
   renderChartCondition(assets);
   renderChartDepartment(assets);
   renderChartYearTrend(assets);
+  renderChartCategory(assets);
   renderChartTopAssets(assets);
   renderChartAgeStatus(assets);
   renderAlertTable(assets);
@@ -680,6 +696,106 @@ function renderChartYearTrend(assets) {
       onClick: (evt, elements) => { if (elements.length > 0) openKpiModal('year-' + years[elements[0].index], 'ปี พ.ศ. ' + (parseInt(years[elements[0].index])+543)); }
     }
   });
+}
+
+function renderChartCategory(assets) {
+  const catCounts = {};
+  const catCosts = {};
+  const catMeta = CAD.CGD_CATEGORIES || {};
+
+  Object.keys(catMeta).forEach(k => {
+    catCounts[k] = 0;
+    catCosts[k] = 0;
+  });
+
+  assets.forEach(a => {
+    const cat = CAD.getAssetCategory(a.name, a.detail, a.brand);
+    const id = cat.id || 'other';
+    catCounts[id] = (catCounts[id] || 0) + 1;
+    catCosts[id] = (catCosts[id] || 0) + (a.cost || 0);
+  });
+
+  const activeCats = Object.keys(catMeta).filter(k => catCounts[k] > 0);
+  if (activeCats.length === 0) activeCats.push('computer', 'office', 'other');
+
+  const labels = activeCats.map(k => (catMeta[k]?.shortLabel || k));
+  const data = activeCats.map(k => catCounts[k] || 0);
+  const colors = activeCats.map(k => (catMeta[k]?.color || '#64748b'));
+
+  destroyChart('chartCategory');
+  const canvasEl = document.getElementById('chartCategory');
+  if (canvasEl) {
+    const ctx = canvasEl.getContext('2d');
+    charts.category = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: colors,
+          borderWidth: 2,
+          borderColor: '#fff',
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '58%',
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              font: { family: 'Sarabun', size: 10.5 },
+              padding: 8,
+              usePointStyle: true,
+              boxWidth: 7
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const catKey = activeCats[ctx.dataIndex];
+                const count = ctx.parsed;
+                const pct = assets.length > 0 ? Math.round(count / assets.length * 100) : 0;
+                const cost = catCosts[catKey] ? catCosts[catKey].toLocaleString() + ' บาท' : '0 บาท';
+                return ` ${ctx.label}: ${count.toLocaleString()} รายการ (${pct}%) - มูลค่า ${cost}`;
+              }
+            }
+          }
+        },
+        onClick: (evt, elements) => {
+          if (elements.length > 0) {
+            const catKey = activeCats[elements[0].index];
+            const cat = catMeta[catKey];
+            openKpiModal('cat-' + catKey, 'หมวดหมู่: ' + (cat?.label || catKey));
+          }
+        }
+      }
+    });
+  }
+
+  // Summary Grid below chart
+  const grid = document.getElementById('categorySummaryGrid');
+  if (grid) {
+    grid.innerHTML = activeCats.map(k => {
+      const cat = catMeta[k] || { icon: '📦', shortLabel: k, color: '#64748b', bg: 'rgba(100,116,139,0.1)', border: 'rgba(100,116,139,0.3)', label: k };
+      const count = catCounts[k] || 0;
+      const pct = assets.length > 0 ? Math.round(count / assets.length * 100) : 0;
+      return `
+        <div onclick="openKpiModal('cat-${k}', 'หมวดหมู่: ${cat.label}')" style="cursor:pointer; background:${cat.bg}; border:1px solid ${cat.border}; border-radius:8px; padding:0.4rem 0.55rem; display:flex; align-items:center; justify-content:space-between; transition:transform 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+          <div style="display:flex; align-items:center; gap:0.3rem; min-width:0;">
+            <span style="font-size:0.9rem;">${cat.icon}</span>
+            <span style="font-size:0.72rem; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cat.shortLabel}</span>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="font-size:0.8rem; font-weight:700; color:${cat.color};">${count.toLocaleString()}</div>
+            <div style="font-size:0.65rem; color:var(--text-muted);">${pct}%</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 }
 
 function renderChartTopAssets(assets) {
@@ -1077,6 +1193,10 @@ function openKpiModal(filterKey, title) {
   else if (filterKey === 'damaged') filtered = filteredAssets.filter(a => a.condition === 'ชำรุด');
   else if (filterKey === 'critical') filtered = filteredAssets.filter(a => CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id).status === 'critical');
   else if (filterKey === 'warning') filtered = filteredAssets.filter(a => CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id).status === 'warning');
+  else if (filterKey.startsWith('cat-')) {
+    const cId = filterKey.slice(4);
+    filtered = filteredAssets.filter(a => CAD.getAssetCategory(a.name, a.detail, a.brand).id === cId);
+  }
   else if (filterKey.startsWith('dept-')) filtered = filteredAssets.filter(a => a.department === filterKey.slice(5));
   else if (filterKey.startsWith('year-')) { const y = parseInt(filterKey.slice(5)); filtered = filteredAssets.filter(a => getYear(a.registered_date) === y); }
   else if (filterKey.startsWith('type-')) { const t = filterKey.slice(5); filtered = filteredAssets.filter(a => (a.name||'').startsWith(t.split(' ')[0])); }

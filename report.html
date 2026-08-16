@@ -188,6 +188,33 @@
           </div>
         </div>
 
+        <!-- Category Summary Table (CGD Standard) -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h2 class="section-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              สรุปมูลค่าและสภาพครุภัณฑ์แยกตามหมวดหมู่ (มาตรฐานกรมบัญชีกลาง)
+            </h2>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <table class="report-summary-table" id="categoryTable" aria-label="สรุปครุภัณฑ์แยกตามหมวดหมู่">
+              <thead>
+                <tr>
+                  <th>หมวดหมู่ครุภัณฑ์</th>
+                  <th>จำนวน (รายการ)</th>
+                  <th>มูลค่าราคาทุนรวม (บาท)</th>
+                  <th>สภาพดี</th>
+                  <th>ปานกลาง</th>
+                  <th>ชำรุด</th>
+                  <th>เกินอายุใช้งาน</th>
+                </tr>
+              </thead>
+              <tbody id="categoryTableBody"></tbody>
+              <tfoot id="categoryTableFoot" style="font-weight:700;background:var(--cmu-purple-pale);"></tfoot>
+            </table>
+          </div>
+        </div>
+
         <!-- Charts -->
         <div class="charts-grid">
           <div class="section-card">
@@ -297,12 +324,82 @@ async function loadReport() {
 
   renderReportKPIs(allAssets);
   renderDeptTable(allAssets);
+  renderCategoryTable(allAssets);
   renderReportCharts(allAssets);
   renderRecommendations(allAssets);
   renderCriticalTable(allAssets);
 
   document.getElementById('loadingState').classList.add('hidden');
   document.getElementById('reportContent').classList.remove('hidden');
+}
+
+// ---- Category Table (CGD Standard) ----
+function renderCategoryTable(assets) {
+  const catData = {};
+  const catMeta = CAD.CGD_CATEGORIES || {};
+
+  Object.keys(catMeta).forEach(k => {
+    catData[k] = {
+      meta: catMeta[k],
+      count: 0,
+      value: 0,
+      good: 0,
+      medium: 0,
+      damaged: 0,
+      critical: 0
+    };
+  });
+
+  assets.forEach(a => {
+    const cat = CAD.getAssetCategory(a.name, a.detail, a.brand);
+    const id = cat.id || 'other';
+    if (!catData[id]) catData[id] = { meta: cat, count: 0, value: 0, good: 0, medium: 0, damaged: 0, critical: 0 };
+    catData[id].count++;
+    catData[id].value += (a.cost || 0);
+    if (a.condition === 'ดี') catData[id].good++;
+    else if (a.condition === 'ปานกลาง') catData[id].medium++;
+    else if (a.condition === 'ชำรุด') catData[id].damaged++;
+    const { status } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id, a.detail, a.brand);
+    if (status === 'critical') catData[id].critical++;
+  });
+
+  const sorted = Object.entries(catData).filter(([, d]) => d.count > 0).sort((a, b) => b[1].count - a[1].count);
+
+  document.getElementById('categoryTableBody').innerHTML = sorted.map(([, d]) => `
+    <tr>
+      <td>
+        <div style="display:flex; align-items:center; gap:0.4rem;">
+          <span style="font-size:1rem;">${d.meta.icon || '📦'}</span>
+          <strong>${escHtml(d.meta.label || 'ครุภัณฑ์อื่นๆ')}</strong>
+        </div>
+      </td>
+      <td style="text-align:right; font-weight:600;">${d.count.toLocaleString()}</td>
+      <td style="text-align:right;">${d.value.toLocaleString()}</td>
+      <td style="text-align:center; color:var(--color-success); font-weight:600;">${d.good}</td>
+      <td style="text-align:center; color:var(--color-warning);">${d.medium}</td>
+      <td style="text-align:center; color:var(--color-danger);">${d.damaged || '—'}</td>
+      <td style="text-align:center; color:var(--color-danger); font-weight:700;">${d.critical || '—'}</td>
+    </tr>
+  `).join('');
+
+  const totals = sorted.reduce((acc, [, d]) => {
+    acc.count += d.count; acc.value += d.value;
+    acc.good += d.good; acc.medium += d.medium;
+    acc.damaged += d.damaged; acc.critical += d.critical;
+    return acc;
+  }, { count: 0, value: 0, good: 0, medium: 0, damaged: 0, critical: 0 });
+
+  document.getElementById('categoryTableFoot').innerHTML = `
+    <tr>
+      <td>รวมทั้งหมด</td>
+      <td style="text-align:right;">${totals.count.toLocaleString()}</td>
+      <td style="text-align:right;">${totals.value.toLocaleString()}</td>
+      <td style="text-align:center;">${totals.good}</td>
+      <td style="text-align:center;">${totals.medium}</td>
+      <td style="text-align:center;">${totals.damaged || '—'}</td>
+      <td style="text-align:center;">${totals.critical || '—'}</td>
+    </tr>
+  `;
 }
 
 // ---- KPIs ----
