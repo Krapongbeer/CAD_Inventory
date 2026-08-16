@@ -1879,3 +1879,154 @@ input, select, textarea { font-family: inherit; }
 ::-webkit-scrollbar-track { background: var(--bg-page); }
 ::-webkit-scrollbar-thumb { background: var(--border-color-hover); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--cmu-purple-light); }
+
+/* ============================================================
+   USER MANAGEMENT & AUDIT LOG ENHANCEMENTS (UX/UI)
+   ============================================================ */
+.user-stats-strip {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.user-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-secondary);
+}
+
+.user-stat-item strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.user-stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.user-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.btn-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-action-pill:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-color-hover);
+  transform: translateY(-1px);
+}
+
+.btn-action-pill.btn-action-edit {
+  background: var(--cmu-purple-pale);
+  color: var(--cmu-purple);
+  border-color: rgba(74, 30, 138, 0.25);
+}
+
+.btn-action-pill.btn-action-edit:hover {
+  background: rgba(74, 30, 138, 0.18);
+}
+
+.btn-action-pill.btn-action-key {
+  background: rgba(147, 51, 234, 0.08);
+  color: #7e22ce;
+  border-color: rgba(147, 51, 234, 0.25);
+}
+
+.btn-action-pill.btn-action-key:hover {
+  background: rgba(147, 51, 234, 0.15);
+}
+
+.btn-action-pill.btn-action-block {
+  background: rgba(245, 158, 11, 0.08);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.btn-action-pill.btn-action-block:hover {
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.btn-action-pill.btn-action-delete {
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  border-color: rgba(239, 68, 68, 0.25);
+  padding: 0.35rem 0.55rem;
+}
+
+.btn-action-pill.btn-action-delete:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #b91c1c;
+}
+
+.user-role-select {
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.user-role-select:focus {
+  border-color: var(--cmu-purple);
+  box-shadow: 0 0 0 2px rgba(74, 30, 138, 0.12);
+}
+
+.status-pill-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 99px;
+  background: rgba(22, 163, 74, 0.12);
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 0.75rem;
+  border: 1px solid rgba(22, 163, 74, 0.25);
+}
+
+.status-pill-suspended {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 99px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 0.75rem;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}

@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=5" />
-  <script src="js/theme.js?v=5"></script>
+  <link rel="stylesheet" href="css/style.css?v=6" />
+  <script src="js/theme.js?v=6"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -83,98 +83,121 @@
     <!-- Page Content -->
     <main class="page-content" id="pageContent">
 
-      <!-- Navigation Tabs (Users vs Audit Logs) -->
-      <div class="tab-nav" role="tablist" style="margin-bottom:1.5rem;">
-        <button class="tab-btn active" id="tabBtnUsers" role="tab" onclick="switchUserTab('users')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          รายชื่อผู้ใช้งาน &amp; จัดการสิทธิ์ (Users RBAC)
-        </button>
-        <button class="tab-btn" id="tabBtnAudit" role="tab" onclick="switchUserTab('audit')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          ประวัติการทำงานของระบบ (Audit Log)
-        </button>
+      <!-- Top Header & Action Card -->
+      <div class="section-card" style="margin-bottom:1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; padding:1.25rem 1.5rem;">
+          <div>
+            <h2 style="font-size:1.25rem; font-weight:700; color:var(--text-primary); margin:0;">
+              จัดการผู้ใช้งานและอนุมัติสิทธิ์
+            </h2>
+            <p style="font-size:0.84rem; color:var(--text-muted); margin-top:0.25rem; margin-bottom:0;">
+              อนุมัติผู้สมัครใหม่ หรือแก้ไขสิทธิ์การเข้าถึงข้อมูลระบบ (Super Admin / Admin / Executive / Staff)
+            </p>
+          </div>
+          
+          <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+            <div class="filter-search" style="min-width:240px; margin:0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" id="userSearchInput" placeholder="ค้นหา ชื่อ / Username / อีเมล / แผนก" oninput="filterUserList()" aria-label="ค้นหาผู้ใช้" />
+            </div>
+
+            <button class="btn btn-secondary btn-sm" onclick="loadUsers()" title="รีเฟรชข้อมูลผู้ใช้" style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.55rem 0.95rem; border-radius:8px; font-weight:600;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              โหลดใหม่
+            </button>
+
+            <button class="btn btn-primary btn-sm" onclick="openAddUserModal()" style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.55rem 1.15rem; border-radius:8px; font-weight:600; background:linear-gradient(135deg, #4A1E8A, #6B21A8); color:#fff; border:none; box-shadow:0 2px 8px rgba(74,30,138,0.25);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+              + เพิ่มผู้ใช้ใหม่
+            </button>
+
+            <button class="btn btn-secondary btn-sm" id="btnToggleAudit" onclick="toggleAuditView()" style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.55rem 0.95rem; border-radius:8px; font-weight:600; background:rgba(217, 119, 6, 0.1); color:#b45309; border:1px solid rgba(217, 119, 6, 0.3);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span>ประวัติกิจกรรม (Audit Log)</span>
+              <span id="auditBadgeCount" style="background:#d97706; color:#fff; border-radius:99px; font-size:0.68rem; padding:0.08rem 0.45rem; font-weight:700; margin-left:0.2rem;">0</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- ===== TAB 1: USERS MANAGEMENT ===== -->
-      <div id="tabUsersSection">
-        <!-- Header Action Bar -->
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem;">
-          <div>
-            <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0;">ผู้ใช้งานในระบบทั้งหมด</h2>
-            <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.2rem;">Superadmin และ Admin สามารถกำหนดสิทธิ์, รีเซ็ตรหัสผ่าน และลบบัญชีผู้ใช้ได้ตามมาตรฐาน RBAC</p>
-          </div>
-          <button class="btn btn-primary" onclick="openAddUserModal()" style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.6rem 1.35rem; border-radius:99px; font-weight:600;">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-            เพิ่มผู้ใช้ใหม่
-          </button>
+      <!-- Quick Metrics Strip -->
+      <div class="user-stats-strip">
+        <div class="user-stat-item">
+          <span class="user-stat-dot" style="background:var(--cmu-purple);"></span>
+          <span>ผู้ใช้ทั้งหมด:</span>
+          <strong id="statTotalUsers">0</strong>
         </div>
+        <div style="height:14px; width:1px; background:var(--border-color);"></div>
+        <div class="user-stat-item">
+          <span class="user-stat-dot" style="background:#16a34a;"></span>
+          <span>ใช้งานปกติ:</span>
+          <strong id="statActiveUsers" style="color:#16a34a;">0</strong>
+        </div>
+        <div style="height:14px; width:1px; background:var(--border-color);"></div>
+        <div class="user-stat-item">
+          <span class="user-stat-dot" style="background:#d97706;"></span>
+          <span>ผู้ดูแลระบบ (Admin/Superadmin):</span>
+          <strong id="statAdminUsers" style="color:#d97706;">0</strong>
+        </div>
+        <div style="height:14px; width:1px; background:var(--border-color);"></div>
+        <div class="user-stat-item">
+          <span class="user-stat-dot" style="background:#dc2626;"></span>
+          <span>ระงับใช้งาน:</span>
+          <strong id="statSuspendedUsers" style="color:#dc2626;">0</strong>
+        </div>
+      </div>
 
-        <!-- Users Table Card -->
+      <!-- ===== SECTION 1: USERS TABLE VIEW ===== -->
+      <div id="sectionUsers">
         <div class="section-card">
-          <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
-            <div style="display:flex; align-items:center; gap:0.6rem;">
-              <h3 class="section-card-title" style="margin:0;">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                รายชื่อบัญชีผู้ใช้
-              </h3>
-              <span id="userCountBadge" class="nav-badge" style="position:static; font-size:0.72rem; padding:0.15rem 0.6rem; background:var(--cmu-purple-pale); color:var(--cmu-purple);">0 คน</span>
-            </div>
-            <div class="filter-search" style="min-width:260px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="search" id="userSearchInput" placeholder="ค้นหาชื่อ, อีเมล, บทบาท..." oninput="filterUserList()" aria-label="ค้นหาผู้ใช้" />
-            </div>
-          </div>
-
           <div class="table-wrap">
             <table class="data-table" id="usersTable">
               <thead>
                 <tr>
-                  <th style="width:50px;">#</th>
                   <th>ชื่อ-นามสกุล</th>
-                  <th>บทบาท (Role)</th>
-                  <th>วันที่สร้างบัญชี</th>
-                  <th style="text-align:right;">การจัดการบัญชี</th>
+                  <th>Username / Email</th>
+                  <th>แผนก/สังกัด</th>
+                  <th>ระดับสิทธิ์การใช้งาน</th>
+                  <th>สถานะ</th>
+                  <th style="text-align:right;">การจัดการ</th>
                 </tr>
               </thead>
               <tbody id="usersBody">
-                <tr><td colspan="5" class="text-center" style="padding:2.5rem; color:var(--text-muted);">กำลังโหลดข้อมูลผู้ใช้...</td></tr>
+                <tr><td colspan="6" class="text-center" style="padding:2.5rem; color:var(--text-muted);"><div class="loader-ring" style="margin:0 auto 0.5rem;"></div>กำลังโหลดข้อมูลผู้ใช้...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- ===== TAB 2: AUDIT LOGS ===== -->
-      <div id="tabAuditSection" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem;">
-          <div>
-            <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin:0;">บันทึกกิจกรรมระบบ (Audit Log)</h2>
-            <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.2rem;">ประวัติการเข้าใช้งาน, การนำเข้าข้อมูล, การลบข้อมูล และการแก้ไขสิทธิ์ผู้ใช้งานทั้งหมด</p>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="loadAuditLogs()" style="display:inline-flex; align-items:center; gap:0.4rem;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            รีเฟรชบันทึก
-          </button>
-        </div>
-
+      <!-- ===== SECTION 2: AUDIT LOG VIEW (COLLAPSIBLE / TOGGLEABLE) ===== -->
+      <div id="sectionAudit" class="hidden" style="margin-top:1.5rem;">
         <div class="section-card">
           <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
-            <div class="filter-bar" style="border:none; padding:0; background:transparent;">
-              <span class="filter-label">กรองประเภท:</span>
-              <select id="filterAuditAction" class="filter-select" onchange="filterAuditList()">
+            <div style="display:flex; align-items:center; gap:0.6rem;">
+              <h3 class="section-card-title" style="margin:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                บันทึกประวัติการทำงานของระบบ (Audit Trail)
+              </h3>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+              <select id="filterAuditAction" class="filter-select" onchange="filterAuditList()" style="height:36px; padding:0 0.75rem; font-size:0.82rem;">
                 <option value="">กิจกรรมทั้งหมด</option>
                 <option value="login">🟢 เข้าสู่ระบบ (Login)</option>
                 <option value="logout">⚪ ออกจากระบบ (Logout)</option>
                 <option value="create_user">👤 เพิ่มผู้ใช้ (Create User)</option>
-                <option value="update_user">✏️ แก้ไขข้อมูล/สิทธิ์ผู้ใช้ (Update User)</option>
+                <option value="update_user">✏️ แก้ไขข้อมูล/สิทธิ์ (Update User)</option>
+                <option value="reset_password">🔑 รีเซ็ตรหัสผ่าน (Reset Password)</option>
+                <option value="toggle_status">🚫 ระงับ/ปลดบล็อก (Toggle Status)</option>
                 <option value="delete_user">🗑️ ลบผู้ใช้ (Delete User)</option>
                 <option value="upload">📤 นำเข้าข้อมูล (Upload)</option>
                 <option value="delete">🗑️ ลบชุดข้อมูล (Delete Batch)</option>
               </select>
-            </div>
-            <div class="filter-search" style="min-width:260px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="search" id="auditSearchInput" placeholder="ค้นหารายละเอียดกิจกรรม..." oninput="filterAuditList()" aria-label="ค้นหากิจกรรม" />
+              <div class="filter-search" style="min-width:220px; margin:0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="search" id="auditSearchInput" placeholder="ค้นหากิจกรรม / รายละเอียด..." oninput="filterAuditList()" aria-label="ค้นหากิจกรรม" style="height:36px;" />
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="loadAuditLogs()" style="height:36px;">รีเฟรช</button>
             </div>
           </div>
 
@@ -182,9 +205,9 @@
             <table class="data-table" id="auditTable">
               <thead>
                 <tr>
-                  <th style="width:170px;">วัน/เวลา</th>
+                  <th style="width:180px;">วัน/เวลา</th>
                   <th>ผู้ใช้งาน</th>
-                  <th>กิจกรรม</th>
+                  <th>ประเภทกิจกรรม</th>
                   <th>รายละเอียด</th>
                 </tr>
               </thead>
@@ -200,7 +223,7 @@
   </div>
 </div>
 
-<!-- ===== FULL EDIT USER MODAL (SUPERADMIN / ADMIN RBAC) ===== -->
+<!-- ===== FULL EDIT USER MODAL ===== -->
 <div id="editUserModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editUserModalTitle">
   <div class="modal" style="max-width:520px;">
     <div class="modal-header">
@@ -229,7 +252,7 @@
 
       <!-- Email Field -->
       <div class="form-group">
-        <label class="form-label" for="editEmail">อีเมล (CMU Email / Account Email) <span class="required">*</span></label>
+        <label class="form-label" for="editEmail">อีเมล / Username (Email / Account) <span class="required">*</span></label>
         <input type="email" id="editEmail" class="form-input" placeholder="user@cmu.ac.th" required autocomplete="off" />
         <span class="form-helper">อีเมลที่ใช้สำหรับลงชื่อเข้าใช้งานระบบ</span>
       </div>
@@ -240,25 +263,39 @@
         <input type="text" id="editFullName" class="form-input" placeholder="ระบุชื่อ นามสกุล" required />
       </div>
 
+      <!-- Department / Affiliation -->
+      <div class="form-group">
+        <label class="form-label" for="editDepartment">แผนก / สังกัด</label>
+        <input type="text" id="editDepartment" class="form-input" placeholder="เช่น กองบริหารงานกลาง, งานพัสดุ, งานการเงิน" />
+      </div>
+
       <!-- Role Selection -->
       <div class="form-group">
-        <label class="form-label" for="editRoleSelect">บทบาทในระบบ (Role) <span class="required">*</span></label>
+        <label class="form-label" for="editRoleSelect">ระดับสิทธิ์การใช้งาน (Role) <span class="required">*</span></label>
         <select id="editRoleSelect" class="form-select">
-          <option value="superadmin">🔴 Superadmin (ผู้ดูแลระบบสูงสุด - เข้าถึงและแก้ไขได้ทุกอย่าง)</option>
+          <option value="superadmin">🔴 Super Admin (สูงสุด - เข้าถึงและแก้ไขได้ทุกอย่าง)</option>
           <option value="admin">🟠 Admin (ผู้ดูแลระบบ - นำเข้า/ลบ/จัดการข้อมูลและผู้ใช้)</option>
-          <option value="staff">🔵 Staff (เจ้าหน้าที่ - ดูและค้นหารายการครุภัณฑ์)</option>
           <option value="executive">🟣 Executive (ผู้บริหาร - ดูภาพรวมและรายงานสรุป)</option>
+          <option value="staff">🔵 Staff (พนักงาน/เจ้าหน้าที่ - ดูและค้นหารายการครุภัณฑ์)</option>
         </select>
-        <span class="form-helper">กำหนดระดับการเข้าถึงตามหลักการแบ่งแยกหน้าที่และความปลอดภัย</span>
+        <span class="form-helper">กำหนดระดับการเข้าถึงตามหลักการ Role-Based Access Control (RBAC)</span>
+      </div>
+
+      <!-- Account Status -->
+      <div class="form-group">
+        <label class="form-label" for="editStatusSelect">สถานะบัญชี (Account Status) <span class="required">*</span></label>
+        <select id="editStatusSelect" class="form-select">
+          <option value="active">🟢 ใช้งานปกติ (อนุมัติใช้งาน)</option>
+          <option value="suspended">🔴 ระงับการใช้งาน (บล็อก)</option>
+        </select>
       </div>
 
       <!-- Reset Password (Optional) -->
       <div class="form-group" style="margin-top:1rem; padding-top:1rem; border-top:1px dashed var(--border-color);">
         <label class="form-label" for="editNewPassword">
-          🔑 รีเซ็ตรหัสผ่านใหม่ (Password Reset)
+          🔑 รีเซ็ตรหัสผ่านใหม่ (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)
         </label>
-        <input type="password" id="editNewPassword" class="form-input" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยนรหัสผ่าน" />
-        <span class="form-helper">กรอกรหัสผ่านใหม่อย่างน้อย 6 ตัวอักษร หากผู้ใช้ลืมรหัสผ่าน</span>
+        <input type="password" id="editNewPassword" class="form-input" placeholder="กรอกรหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)" />
       </div>
 
       <!-- Delete User Section -->
@@ -281,6 +318,38 @@
   </div>
 </div>
 
+<!-- ===== QUICK RESET PASSWORD MODAL ===== -->
+<div id="quickResetModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="quickResetModalTitle">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="quickResetModalTitle">
+        🔑 รีเซ็ตรหัสผ่านผู้ใช้งาน
+      </h3>
+      <button class="btn-modal-close" onclick="closeQuickResetModal()" aria-label="ปิด">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="resetUserId" />
+      <div style="background:var(--bg-hover); border:1px solid var(--border-color); border-radius:8px; padding:0.75rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.6rem;">
+        <span style="font-size:1.2rem;">👤</span>
+        <div>
+          <div id="resetUserName" style="font-weight:700; font-size:0.88rem;">-</div>
+          <div id="resetUserEmail" style="font-size:0.75rem; color:var(--text-muted);">-</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="resetPasswordInput">รหัสผ่านใหม่ (New Password) <span class="required">*</span></label>
+        <input type="password" id="resetPasswordInput" class="form-input" placeholder="อย่างน้อย 6 ตัวอักษร" autocomplete="new-password" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeQuickResetModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="submitQuickResetPassword()" id="btnSubmitResetPassword">ตั้งรหัสผ่านใหม่</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== ADD USER MODAL ===== -->
 <div id="addUserModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="addUserModalTitle">
   <div class="modal" style="max-width:480px;">
@@ -295,7 +364,7 @@
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label" for="newEmail">อีเมล (CMU Email / Email) <span class="required">*</span></label>
+        <label class="form-label" for="newEmail">อีเมล / Username (CMU Email / Email) <span class="required">*</span></label>
         <input type="email" id="newEmail" class="form-input" placeholder="user@cmu.ac.th" required autocomplete="off" />
       </div>
       <div class="form-group">
@@ -307,12 +376,16 @@
         <input type="text" id="newName" class="form-input" placeholder="เช่น สมชาย ใจดี" required />
       </div>
       <div class="form-group">
-        <label class="form-label" for="newRole">บทบาทในระบบ (Role) <span class="required">*</span></label>
+        <label class="form-label" for="newDepartment">แผนก / สังกัด</label>
+        <input type="text" id="newDepartment" class="form-input" placeholder="เช่น กองบริหารงานกลาง, งานพัสดุ" value="กองบริหารงานกลาง" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="newRole">ระดับสิทธิ์การใช้งาน (Role) <span class="required">*</span></label>
         <select id="newRole" class="form-select">
-          <option value="staff">🔵 Staff (เจ้าหน้าที่ - ดูและค้นหาครุภัณฑ์)</option>
+          <option value="staff">🔵 Staff (พนักงาน/เจ้าหน้าที่ - ดูและค้นหาครุภัณฑ์)</option>
           <option value="admin">🟠 Admin (ผู้ดูแลระบบ - นำเข้า/ลบข้อมูล/จัดการผู้ใช้)</option>
           <option value="executive">🟣 Executive (ผู้บริหาร - ดูแดชบอร์ดและรายงาน)</option>
-          <option value="superadmin">🔴 Superadmin (ผู้ดูแลระบบสูงสุด - จัดการทุกอย่าง)</option>
+          <option value="superadmin">🔴 Super Admin (ผู้ดูแลระบบสูงสุด - จัดการทุกอย่าง)</option>
         </select>
       </div>
     </div>
@@ -324,12 +397,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=5"></script>
-<script src="js/auth.js?v=5"></script>
+<script src="js/config.js?v=6"></script>
+<script src="js/auth.js?v=6"></script>
 <script>
 let currentUserData = null;
 let allUsersList = [];
 let allAuditList = [];
+let isAuditViewActive = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = await requireAuth(['superadmin', 'admin']);
@@ -343,26 +417,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (avatarEl && nameEl) avatarEl.textContent = (nameEl.textContent || '?').charAt(0).toUpperCase();
 
   await loadUsers();
+  loadAuditLogsCount();
 });
 
-// Tab Switcher
-function switchUserTab(tab) {
-  const btnUsers = document.getElementById('tabBtnUsers');
-  const btnAudit = document.getElementById('tabBtnAudit');
-  const secUsers = document.getElementById('tabUsersSection');
-  const secAudit = document.getElementById('tabAuditSection');
+// Toggle Audit View
+function toggleAuditView() {
+  isAuditViewActive = !isAuditViewActive;
+  const secAudit = document.getElementById('sectionAudit');
+  const btn = document.getElementById('btnToggleAudit');
 
-  if (tab === 'users') {
-    btnUsers.classList.add('active');
-    btnAudit.classList.remove('active');
-    secUsers.classList.remove('hidden');
-    secAudit.classList.add('hidden');
-  } else {
-    btnUsers.classList.remove('active');
-    btnAudit.classList.add('active');
-    secUsers.classList.add('hidden');
+  if (isAuditViewActive) {
     secAudit.classList.remove('hidden');
+    btn.style.background = '#d97706';
+    btn.style.color = '#ffffff';
     loadAuditLogs();
+    secAudit.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    secAudit.classList.add('hidden');
+    btn.style.background = 'rgba(217, 119, 6, 0.1)';
+    btn.style.color = '#b45309';
   }
 }
 
@@ -371,12 +444,12 @@ function switchUserTab(tab) {
 // ============================================================
 async function loadUsers() {
   const tbody = document.getElementById('usersBody');
-  tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:2.5rem; color:var(--text-muted);"><div class="loader-ring" style="margin:0 auto 0.5rem;"></div>กำลังโหลดข้อมูล...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:2.5rem; color:var(--text-muted);"><div class="loader-ring" style="margin:0 auto 0.5rem;"></div>กำลังโหลดข้อมูล...</td></tr>';
 
   try {
     const { data: roles, error } = await CAD.supabase
       .from('user_roles')
-      .select('id, user_id, role, full_name, email, created_at')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -388,66 +461,96 @@ async function loadUsers() {
       if (!u.email && u.user_id === currentUserData?.session?.user?.id) {
         u.email = currentUserData?.session?.user?.email;
       }
+      if (!u.department) u.department = 'กองบริหารงานกลาง';
+      if (!u.status) u.status = 'active';
     });
 
+    updateUserStats(allUsersList);
     renderUsersTable(allUsersList);
   } catch (err) {
     console.error('Load users error:', err);
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:2rem; color:var(--color-danger);">เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:2rem; color:var(--color-danger);">เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้</td></tr>';
   }
+}
+
+function updateUserStats(users) {
+  const total = users.length;
+  const active = users.filter(u => (u.status || 'active') === 'active').length;
+  const suspended = users.filter(u => u.status === 'suspended').length;
+  const admin = users.filter(u => u.role === 'admin' || u.role === 'superadmin').length;
+
+  document.getElementById('statTotalUsers').textContent = total;
+  document.getElementById('statActiveUsers').textContent = active;
+  document.getElementById('statAdminUsers').textContent = admin;
+  document.getElementById('statSuspendedUsers').textContent = suspended;
 }
 
 function renderUsersTable(users) {
   const tbody = document.getElementById('usersBody');
-  const badge = document.getElementById('userCountBadge');
-  if (badge) badge.textContent = users.length + ' คน';
 
   if (!users || users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding:2.5rem; color:var(--text-muted);">ไม่พบข้อมูลผู้ใช้งาน</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:2.5rem; color:var(--text-muted);">ไม่พบข้อมูลผู้ใช้งาน</td></tr>';
     return;
   }
 
-  const roleMeta = {
-    superadmin: { label: 'ผู้ดูแลระบบสูงสุด', bg: 'rgba(239, 68, 68, 0.15)', col: '#dc2626', icon: '🔴' },
-    admin:      { label: 'ผู้ดูแลระบบ',       bg: 'rgba(245, 158, 11, 0.15)', col: '#d97706', icon: '🟠' },
-    staff:      { label: 'เจ้าหน้าที่',       bg: 'rgba(59, 130, 246, 0.15)', col: '#2563eb', icon: '🔵' },
-    executive:  { label: 'ผู้บริหาร',         bg: 'rgba(168, 85, 247, 0.15)', col: '#9333ea', icon: '🟣' },
-    editor:     { label: 'ผู้นำเข้าข้อมูล',   bg: 'rgba(13, 148, 136, 0.15)', col: '#0d9488', icon: '🟢' },
-    viewer:     { label: 'ผู้ดูรายงาน',       bg: 'rgba(107, 114, 128, 0.15)', col: '#4b5563', icon: '⚪' }
-  };
-
   tbody.innerHTML = users.map((u, i) => {
-    const meta = roleMeta[u.role] || { label: u.role || 'User', bg: 'var(--bg-hover)', col: 'var(--text-secondary)', icon: '👤' };
-    const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' }) : '-';
     const initial = (u.full_name || u.email || '?').charAt(0).toUpperCase();
     const displayEmail = u.email || 'ไม่ระบุอีเมล';
+    const username = displayEmail.includes('@') ? displayEmail.split('@')[0] : (u.full_name || 'user');
+    const dept = u.department || 'กองบริหารงานกลาง';
+    const isSuspended = u.status === 'suspended';
 
     return `
       <tr>
-        <td style="font-weight:600; color:var(--text-muted); font-size:0.8rem;">${i + 1}</td>
         <td>
           <div style="display:flex; align-items:center; gap:0.75rem;">
             <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, var(--cmu-purple-mid), var(--cmu-purple-light)); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.88rem; flex-shrink:0;">${initial}</div>
             <div>
-              <div style="font-weight:600; font-size:0.92rem; color:var(--text-primary);">${escHtml(u.full_name || '-')}</div>
-              <div style="font-size:0.78rem; color:var(--text-muted); display:inline-flex; align-items:center; gap:0.3rem; margin-top:0.2rem; background:var(--bg-hover); padding:0.12rem 0.5rem; border-radius:4px; border:1px solid var(--border-color);">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                <span>${escHtml(displayEmail)}</span>
-              </div>
+              <strong style="font-size:0.92rem; color:var(--text-primary); display:block;">${escHtml(u.full_name || '-')}</strong>
             </div>
           </div>
         </td>
         <td>
-          <span style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.75rem; border-radius:99px; font-size:0.75rem; font-weight:600; background:${meta.bg}; color:${meta.col};">
-            <span>${meta.icon}</span> ${escHtml(meta.label)}
+          <div>
+            <span style="font-weight:600; font-size:0.88rem; color:var(--text-primary);">${escHtml(username)}</span>
+            <div style="font-size:0.76rem; color:var(--text-muted); margin-top:0.15rem;">
+              ${escHtml(displayEmail)}
+            </div>
+          </div>
+        </td>
+        <td>
+          <span style="font-size:0.82rem; color:var(--text-secondary); background:var(--bg-hover); padding:0.2rem 0.55rem; border-radius:6px; border:1px solid var(--border-color);">
+            ${escHtml(dept)}
           </span>
         </td>
-        <td style="font-size:0.82rem; color:var(--text-secondary);">${dateStr}</td>
+        <td>
+          <select class="user-role-select" onchange="quickChangeRole('${u.user_id}', this.value, '${escHtml(u.full_name||'')}')">
+            <option value="staff" ${u.role==='staff'?'selected':''}>Staff (พนักงาน/เจ้าหน้าที่)</option>
+            <option value="admin" ${u.role==='admin'?'selected':''}>Admin (ผู้ดูแลระบบ)</option>
+            <option value="executive" ${u.role==='executive'?'selected':''}>Executive (ผู้บริหาร)</option>
+            <option value="superadmin" ${u.role==='superadmin'?'selected':''}>Super Admin (สูงสุด)</option>
+          </select>
+        </td>
+        <td>
+          ${isSuspended 
+            ? '<span class="status-pill-suspended">🔴 ระงับใช้งาน</span>' 
+            : '<span class="status-pill-active">🟢 อนุมัติใช้งาน</span>'}
+        </td>
         <td style="text-align:right;">
-          <button class="btn btn-secondary btn-sm" onclick="openEditUserModal('${u.user_id}', '${escHtml(u.full_name||'')}', '${u.role}', '${escHtml(u.email||'')}')" style="padding:0.4rem 0.9rem; font-size:0.8rem; border-radius:6px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.25rem;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            แก้ไขบัญชี &amp; สิทธิ์
-          </button>
+          <div class="user-action-group">
+            <button class="btn-action-pill btn-action-edit" onclick="openEditUserModal('${u.user_id}', '${escHtml(u.full_name||'')}', '${u.role}', '${escHtml(u.email||'')}', '${escHtml(dept)}', '${u.status||'active'}')" title="แก้ไขข้อมูลบัญชี">
+              ✏️ แก้ไข
+            </button>
+            <button class="btn-action-pill btn-action-key" onclick="openQuickResetModal('${u.user_id}', '${escHtml(u.full_name||'')}', '${escHtml(displayEmail)}')" title="รีเซ็ตรหัสผ่าน">
+              🔑 รีเซ็ตรหัส
+            </button>
+            <button class="btn-action-pill btn-action-block" onclick="toggleUserStatus('${u.user_id}', '${u.status||'active'}', '${escHtml(u.full_name||'')}')" title="${isSuspended?'ปลดบล็อก':'ระงับการใช้งาน'}">
+              🚫 ${isSuspended ? 'ปลดบล็อก' : 'บล็อก'}
+            </button>
+            <button class="btn-action-pill btn-action-delete" onclick="confirmDirectDeleteUser('${u.user_id}', '${escHtml(u.full_name||'')}')" title="ลบบัญชีผู้ใช้">
+              🗑️
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -463,9 +566,114 @@ function filterUserList() {
   const filtered = allUsersList.filter(u => 
     (u.full_name || '').toLowerCase().includes(q) ||
     (u.email || '').toLowerCase().includes(q) ||
-    (u.role || '').toLowerCase().includes(q)
+    (u.role || '').toLowerCase().includes(q) ||
+    (u.department || '').toLowerCase().includes(q)
   );
   renderUsersTable(filtered);
+}
+
+// Quick Change Role
+async function quickChangeRole(userId, newRole, fullName) {
+  try {
+    const { error } = await CAD.supabase
+      .from('user_roles')
+      .update({ role: newRole })
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    await logActivity('change_role', `เปลี่ยนสิทธิ์ผู้ใช้: ${fullName} เป็น ${newRole}`);
+    await loadUsers();
+  } catch (err) {
+    console.error('Quick change role error:', err);
+    alert('เกิดข้อผิดพลาดในการเปลี่ยนสิทธิ์: ' + (err.message || ''));
+  }
+}
+
+// Toggle User Status (Active / Suspended)
+async function toggleUserStatus(userId, currentStatus, fullName) {
+  const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
+  const label = newStatus === 'suspended' ? 'ระงับการใช้งาน' : 'เปิดใช้งานปกติ';
+
+  if (!confirm(`คุณต้องการเปลี่ยนสถานะบัญชีของ "${fullName}" เป็น "${label}" ใช่หรือไม่?`)) return;
+
+  try {
+    const { error } = await CAD.supabase
+      .from('user_roles')
+      .update({ status: newStatus })
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    await logActivity('toggle_status', `เปลี่ยนสถานะบัญชี: ${fullName} เป็น ${label}`);
+    await loadUsers();
+  } catch (err) {
+    console.error('Toggle status error:', err);
+    alert('เกิดข้อผิดพลาด: ' + (err.message || ''));
+  }
+}
+
+// Direct Delete User
+async function confirmDirectDeleteUser(userId, fullName) {
+  if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบบัญชีของ "${fullName}" ออกจากระบบถาวร?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`)) {
+    try {
+      const { error } = await adminDeleteUser(userId);
+      if (error) {
+        const { error: fbErr } = await CAD.supabase.from('user_roles').delete().eq('user_id', userId);
+        if (fbErr) throw fbErr;
+      }
+
+      await logActivity('delete_user', `ลบบัญชีผู้ใช้: ${fullName}`);
+      await loadUsers();
+      alert('ลบบัญชีผู้ใช้สำเร็จ');
+    } catch (err) {
+      console.error('Delete user error:', err);
+      alert('เกิดข้อผิดพลาดในการลบผู้ใช้: ' + (err.message || ''));
+    }
+  }
+}
+
+// Quick Reset Password Modal
+function openQuickResetModal(userId, fullName, email) {
+  document.getElementById('resetUserId').value = userId;
+  document.getElementById('resetUserName').textContent = fullName;
+  document.getElementById('resetUserEmail').textContent = email;
+  document.getElementById('resetPasswordInput').value = '';
+  document.getElementById('quickResetModal').classList.remove('hidden');
+}
+
+function closeQuickResetModal() {
+  document.getElementById('quickResetModal').classList.add('hidden');
+}
+
+async function submitQuickResetPassword() {
+  const userId = document.getElementById('resetUserId').value;
+  const fullName = document.getElementById('resetUserName').textContent;
+  const newPassword = document.getElementById('resetPasswordInput').value.trim();
+  const btn = document.getElementById('btnSubmitResetPassword');
+
+  if (!newPassword || newPassword.length < 6) {
+    alert('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'กำลังบันทึก...';
+
+  try {
+    const { error } = await adminUpdateUser(userId, fullName, null, newPassword, null);
+    if (error) throw error;
+
+    await logActivity('reset_password', `รีเซ็ตรหัสผ่านผู้ใช้: ${fullName}`);
+    closeQuickResetModal();
+    alert('รีเซ็ตรหัสผ่านสำเร็จ');
+  } catch (err) {
+    console.error('Reset password error:', err);
+    alert('เกิดข้อผิดพลาด: ' + (err.message || ''));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ตั้งรหัสผ่านใหม่';
+  }
 }
 
 // Add User
@@ -473,6 +681,7 @@ function openAddUserModal() {
   document.getElementById('newEmail').value = '';
   document.getElementById('newPassword').value = '';
   document.getElementById('newName').value = '';
+  document.getElementById('newDepartment').value = 'กองบริหารงานกลาง';
   document.getElementById('newRole').value = 'staff';
   document.getElementById('addUserModal').classList.remove('hidden');
 }
@@ -485,6 +694,7 @@ async function submitAddUser() {
   const email = document.getElementById('newEmail').value.trim();
   const password = document.getElementById('newPassword').value;
   const fullName = document.getElementById('newName').value.trim();
+  const department = document.getElementById('newDepartment').value.trim() || 'กองบริหารงานกลาง';
   const role = document.getElementById('newRole').value;
   const btn = document.getElementById('btnAddUser');
 
@@ -504,7 +714,12 @@ async function submitAddUser() {
     const { data, error } = await adminCreateUser(email, password, fullName, role);
     if (error) throw error;
 
-    await logActivity('create_user', `สร้างผู้ใช้ใหม่: ${fullName} (${role}) อีเมล: ${email}`);
+    // Update department if stored
+    if (data?.user_id || data?.id) {
+      await CAD.supabase.from('user_roles').update({ department }).eq('user_id', data.user_id || data.id);
+    }
+
+    await logActivity('create_user', `สร้างผู้ใช้ใหม่: ${fullName} (${role}) อีเมล: ${email}, แผนก: ${department}`);
     closeAddUserModal();
     await loadUsers();
     alert('สร้างผู้ใช้งานสำเร็จ');
@@ -518,14 +733,15 @@ async function submitAddUser() {
 }
 
 // Edit User
-function openEditUserModal(userId, fullName, currentRole, email = '') {
+function openEditUserModal(userId, fullName, currentRole, email = '', department = 'กองบริหารงานกลาง', status = 'active') {
   document.getElementById('editUserId').value = userId;
   document.getElementById('editFullName').value = fullName;
   document.getElementById('editEmail').value = email;
+  document.getElementById('editDepartment').value = department || 'กองบริหารงานกลาง';
   document.getElementById('editRoleSelect').value = currentRole || 'staff';
+  document.getElementById('editStatusSelect').value = status || 'active';
   document.getElementById('editNewPassword').value = '';
 
-  // Update header info pill
   const initial = (fullName || email || '?').charAt(0).toUpperCase();
   document.getElementById('editModalAvatar').textContent = initial;
   document.getElementById('editModalHeaderName').textContent = fullName || 'ผู้ใช้งาน';
@@ -542,16 +758,14 @@ async function submitEditUser() {
   const userId = document.getElementById('editUserId').value;
   const newName = document.getElementById('editFullName').value.trim();
   const newEmail = document.getElementById('editEmail').value.trim();
+  const newDept = document.getElementById('editDepartment').value.trim();
   const newRole = document.getElementById('editRoleSelect').value;
+  const newStatus = document.getElementById('editStatusSelect').value;
   const newPassword = document.getElementById('editNewPassword').value.trim();
   const btn = document.getElementById('btnSaveEditUser');
 
-  if (!newName) {
-    alert('กรุณาระบุชื่อ-นามสกุล');
-    return;
-  }
-  if (!newEmail) {
-    alert('กรุณาระบุอีเมล');
+  if (!newName || !newEmail) {
+    alert('กรุณากรอกข้อมูลให้ครบถ้วน');
     return;
   }
   if (newPassword && newPassword.length < 6) {
@@ -563,20 +777,15 @@ async function submitEditUser() {
   btn.textContent = 'กำลังบันทึก...';
 
   try {
-    // 1. Try calling the dedicated RPC admin_update_user with email
-    const { data, error } = await adminUpdateUser(userId, newName, newRole, newPassword || null, newEmail || null);
+    const { error } = await adminUpdateUser(userId, newName, newRole, newPassword || null, newEmail || null);
     
-    if (error) {
-      // Fallback: direct update in user_roles table
-      const { error: fbErr } = await CAD.supabase
-        .from('user_roles')
-        .update({ full_name: newName, role: newRole, email: newEmail })
-        .eq('user_id', userId);
-      
-      if (fbErr) throw fbErr;
-    }
+    // Always sync department and status directly in user_roles
+    await CAD.supabase
+      .from('user_roles')
+      .update({ full_name: newName, role: newRole, email: newEmail, department: newDept, status: newStatus })
+      .eq('user_id', userId);
 
-    await logActivity('update_user', `แก้ไขบัญชีผู้ใช้: ${newName} (Role: ${newRole}, อีเมล: ${newEmail}${newPassword ? ', รีเซ็ตรหัสผ่าน' : ''})`);
+    await logActivity('update_user', `แก้ไขบัญชีผู้ใช้: ${newName} (Role: ${newRole}, อีเมล: ${newEmail}, แผนก: ${newDept})`);
     closeEditUserModal();
     await loadUsers();
     alert('บันทึกการแก้ไขสำเร็จ');
@@ -597,9 +806,7 @@ async function confirmDeleteUser() {
     try {
       const { error } = await adminDeleteUser(userId);
       if (error) {
-        // Fallback direct delete
-        const { error: fbErr } = await CAD.supabase.from('user_roles').delete().eq('user_id', userId);
-        if (fbErr) throw fbErr;
+        await CAD.supabase.from('user_roles').delete().eq('user_id', userId);
       }
 
       await logActivity('delete_user', `ลบบัญชีผู้ใช้: ${fullName}`);
@@ -616,6 +823,19 @@ async function confirmDeleteUser() {
 // ============================================================
 // AUDIT LOGS
 // ============================================================
+async function loadAuditLogsCount() {
+  try {
+    const { count, error } = await CAD.supabase
+      .from('activity_logs')
+      .select('*', { count: 'exact', head: true });
+    if (!error && count !== null) {
+      document.getElementById('auditBadgeCount').textContent = count;
+    }
+  } catch (err) {
+    console.warn('Audit count error:', err);
+  }
+}
+
 async function loadAuditLogs() {
   const tbody = document.getElementById('auditBody');
   tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="padding:2.5rem; color:var(--text-muted);"><div class="loader-ring" style="margin:0 auto 0.5rem;"></div>กำลังโหลดบันทึกกิจกรรม...</td></tr>';
@@ -625,11 +845,12 @@ async function loadAuditLogs() {
       .from('activity_logs')
       .select('id, user_id, action, details, created_at')
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(150);
 
     if (error) throw error;
 
     allAuditList = logs || [];
+    document.getElementById('auditBadgeCount').textContent = allAuditList.length;
     
     // Map user names
     const uids = [...new Set(allAuditList.map(l => l.user_id).filter(Boolean))];
@@ -658,16 +879,16 @@ function renderAuditTable(logs) {
   }
 
   const icons = {
-    login:       '🟢 เข้าสู่ระบบ',
-    logout:      '⚪ ออกจากระบบ',
-    create_user: '👤 เพิ่มผู้ใช้ใหม่',
-    update_user: '✏️ แก้ไขข้อมูล/สิทธิ์',
-    change_role: '🔑 แก้ไขสิทธิ์',
-    delete_user: '🗑️ ลบบัญชีผู้ใช้',
-    upload:      '📤 นำเข้าข้อมูล',
-    delete:      '🗑️ ลบข้อมูลครุภัณฑ์',
-    export_excel:'📊 ส่งออก Excel',
-    export_pdf:  '📄 ส่งออก PDF'
+    login:          '🟢 เข้าสู่ระบบ (Login)',
+    logout:         '⚪ ออกจากระบบ (Logout)',
+    create_user:    '👤 เพิ่มผู้ใช้ (Create User)',
+    update_user:    '✏️ แก้ไขข้อมูล (Update User)',
+    change_role:    '🔑 เปลี่ยนสิทธิ์ (Role Change)',
+    reset_password: '🔑 รีเซ็ตรหัส (Reset Password)',
+    toggle_status:  '🚫 เปลี่ยนสถานะ (Toggle Status)',
+    delete_user:    '🗑️ ลบบัญชี (Delete User)',
+    upload:         '📤 นำเข้าข้อมูล (Upload)',
+    delete:         '🗑️ ลบข้อมูลครุภัณฑ์ (Delete Batch)'
   };
 
   tbody.innerHTML = logs.map(l => {
@@ -683,10 +904,12 @@ function renderAuditTable(logs) {
           <div style="font-size:0.74rem; color:var(--text-secondary);">${timeStr} น.</div>
         </td>
         <td>
-          <div style="font-weight:600; font-size:0.85rem; color:var(--text-primary);">${escHtml(uName)}</div>
+          <div style="font-weight:600; font-size:0.88rem; color:var(--text-primary);">${escHtml(uName)}</div>
         </td>
         <td>
-          <span style="font-size:0.82rem; font-weight:600; color:var(--cmu-purple-dark);">${icons[l.action] || escHtml(l.action)}</span>
+          <span style="font-size:0.8rem; font-weight:600; color:var(--cmu-purple-dark); background:var(--cmu-purple-pale); padding:0.2rem 0.55rem; border-radius:6px;">
+            ${icons[l.action] || escHtml(l.action)}
+          </span>
         </td>
         <td style="font-size:0.82rem; color:var(--text-secondary); line-height:1.5;">${escHtml(l.details || '-')}</td>
       </tr>

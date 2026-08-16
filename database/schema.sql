@@ -13,12 +13,14 @@
 
 -- 1.1 ตารางผู้ใช้งานและสิทธิ์ (user_roles)
 CREATE TABLE IF NOT EXISTS public.user_roles (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  role       TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'staff', 'executive', 'editor', 'viewer')),
-  full_name  TEXT,
-  email      TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  role        TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'staff', 'executive', 'editor', 'viewer')),
+  full_name   TEXT,
+  email       TEXT,
+  department  TEXT DEFAULT 'กองบริหารงานกลาง',
+  status      TEXT DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'pending')),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ปลดล็อกและอัปเดต Constraint & Column หากตารางมีอยู่เดิม
@@ -28,6 +30,8 @@ BEGIN
   ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_role_check 
     CHECK (role IN ('superadmin', 'admin', 'staff', 'executive', 'editor', 'viewer'));
   ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS email TEXT;
+  ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS department TEXT DEFAULT 'กองบริหารงานกลาง';
+  ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
 EXCEPTION
   WHEN OTHERS THEN NULL;
 END $$;
