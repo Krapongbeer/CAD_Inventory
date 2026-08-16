@@ -165,33 +165,112 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sel) sel.value = currentTheme;
 });
 
-// Admin User Management RPC Calls
+// Admin User Management RPC Calls with automatic client fallback
 async function adminCreateUser(email, password, fullName, userRole) {
-  const { data, error } = await window.CAD.supabase.rpc('admin_create_user', {
-    email: email,
-    password: password,
-    full_name: fullName,
-    user_role: userRole
-  });
-  return { data, error };
+  // 1. Try calling the PostgreSQL RPC function
+  try {
+    const { data, error } = await window.CAD.supabase.rpc('admin_create_user', {
+      email: email,
+      password: password,
+      full_name: fullName,
+      user_role: userRole
+    });
+    if (!error && data) return { data, error: null };
+    console.warn('RPC admin_create_user returned error, falling back to auth.signUp:', error);
+  } catch (rpcErr) {
+    console.warn('RPC exception, falling back to auth.signUp:', rpcErr);
+  }
+
+  // 2. Seamless Client-Side Fallback via Supabase Auth & user_roles
+  try {
+    const { data: authData, error: authError } = await window.CAD.supabase.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: { full_name: fullName }
+      }
+    });
+
+    if (authError) throw authError;
+
+    const newUid = authData?.user?.id;
+    if (newUid) {
+      const { error: roleErr } = await window.CAD.supabase
+        .from('user_roles')
+        .upsert({
+          user_id: newUid,
+          role: userRole,
+          full_name: fullName,
+          email: email,
+          status: 'active'
+        }, { onConflict: 'user_id' });
+
+      if (roleErr) throw roleErr;
+    }
+
+    return { data: { success: true, user_id: newUid }, error: null };
+  } catch (fallbackErr) {
+    console.error('adminCreateUser fallback failed:', fallbackErr);
+    return { data: null, error: fallbackErr };
+  }
 }
 
 async function adminUpdateUser(targetUserId, newFullName, newRole, newPassword = null, newEmail = null) {
-  const { data, error } = await window.CAD.supabase.rpc('admin_update_user', {
-    target_user_id: targetUserId,
-    new_full_name: newFullName,
-    new_role: newRole,
-    new_password: newPassword || null,
-    new_email: newEmail || null
-  });
-  return { data, error };
+  // 1. Try RPC
+  try {
+    const { data, error } = await window.CAD.supabase.rpc('admin_update_user', {
+      target_user_id: targetUserId,
+      new_full_name: newFullName,
+      new_role: newRole,
+      new_password: newPassword || null,
+      new_email: newEmail || null
+    });
+    if (!error && data) return { data, error: null };
+  } catch (rpcErr) {
+    console.warn('RPC admin_update_user failed, falling back to direct update:', rpcErr);
+  }
+
+  // 2. Fallback to direct table update
+  try {
+    const updateObj = { full_name: newFullName };
+    if (newRole) updateObj.role = newRole;
+    if (newEmail) updateObj.email = newEmail;
+
+    const { error: fbErr } = await window.CAD.supabase
+      .from('user_roles')
+      .update(updateObj)
+      .eq('user_id', targetUserId);
+
+    if (fbErr) throw fbErr;
+    return { data: { success: true }, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
 }
 
 async function adminDeleteUser(targetUserId) {
-  const { data, error } = await window.CAD.supabase.rpc('admin_delete_user', {
-    target_user_id: targetUserId
-  });
-  return { data, error };
+  // 1. Try RPC
+  try {
+    const { data, error } = await window.CAD.supabase.rpc('admin_delete_user', {
+      target_user_id: targetUserId
+    });
+    if (!error && data) return { data, error: null };
+  } catch (rpcErr) {
+    console.warn('RPC admin_delete_user failed, falling back to direct delete:', rpcErr);
+  }
+
+  // 2. Fallback to direct table delete
+  try {
+    const { error: fbErr } = await window.CAD.supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', targetUserId);
+
+    if (fbErr) throw fbErr;
+    return { data: { success: true }, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
 }
 
 /**

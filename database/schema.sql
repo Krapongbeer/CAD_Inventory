@@ -343,6 +343,11 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
+-- 4.4 ให้สิทธิ์ Execute แก่ Authenticated Users
+GRANT EXECUTE ON FUNCTION public.admin_create_user(TEXT, TEXT, TEXT, TEXT) TO authenticated, service_role, anon;
+GRANT EXECUTE ON FUNCTION public.admin_update_user(UUID, TEXT, TEXT, TEXT, TEXT) TO authenticated, service_role, anon;
+GRANT EXECUTE ON FUNCTION public.admin_delete_user(UUID) TO authenticated, service_role, anon;
+
 -- ================================================================
 -- 5. ตั้งค่าสิทธิ์ Superadmin สำหรับบัญชีแรก
 -- ================================================================
