@@ -118,6 +118,12 @@
         </div>
       </div>
       <div class="topbar-right">
+        <!-- Theme Switcher -->
+        <div class="theme-switcher-group" style="display: flex; gap: 0.25rem; background: var(--bg-hover); padding: 0.25rem; border-radius: 20px; margin-right: 1rem;">
+          <button class="btn-icon" style="padding:0.25rem; border-radius:50%;" onclick="ThemeManager.setTheme('light')" title="สว่าง">🌞</button>
+          <button class="btn-icon" style="padding:0.25rem; border-radius:50%;" onclick="ThemeManager.setTheme('dark')" title="มืด">🌙</button>
+          <button class="btn-icon" style="padding:0.25rem; border-radius:50%;" onclick="ThemeManager.setTheme('auto')" title="อัตโนมัติ">⚙️</button>
+        </div>
         <button class="btn btn-secondary btn-sm no-print" onclick="exportExcelReport()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           Export Excel

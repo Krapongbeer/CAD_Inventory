@@ -101,3 +101,13 @@ window.getSession = getSession;
 window.getCurrentUserRole = getCurrentUserRole;
 window.requireAuth = requireAuth;
 window.populateNavUser = populateNavUser;
+window.adminCreateUser = async function(email, password, fullName, userRole) {
+  const { data, error } = await window.CAD.supabase.rpc('admin_create_user', {
+    email: email,
+    password: password,
+    full_name: fullName,
+    user_role: userRole
+  });
+  return { data, error };
+};
+
