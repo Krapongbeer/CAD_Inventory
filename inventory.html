@@ -484,14 +484,20 @@ function renderTable() {
           <span>${escHtml(a.asset_key || '-')}</span>
         </td>
         <td class="col-name">
-          <div style="font-weight:700; color:var(--text-primary); font-size:0.9rem; line-height:1.35; margin-bottom:0.25rem;">
+          <div style="font-weight:700; color:var(--text-primary); font-size:0.92rem; line-height:1.35; margin-bottom:0.3rem;">
             ${escHtml(a.name || '-')}
           </div>
-          <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
-            <span style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.72rem; font-weight:600; padding:0.12rem 0.5rem; border-radius:4px; background:${category.bg}; color:${category.color}; border:1px solid ${category.border};">
-              <span>${category.icon}</span> ${escHtml(category.shortLabel)}
-            </span>
-            ${(a.brand || a.model) ? `<span style="font-size:0.74rem; color:var(--text-muted);">${escHtml([a.brand, a.model].filter(Boolean).join(' '))}</span>` : ''}
+          <div style="display:flex; flex-direction:column; gap:0.25rem;">
+            <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+              <span style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.7rem; font-weight:600; padding:0.12rem 0.4rem; border-radius:4px; background:${category.bg}; color:${category.color}; border:1px solid ${category.border};">
+                <span>${category.icon}</span> ${escHtml(category.shortLabel)}
+              </span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-top:0.1rem;">
+              ${(a.brand || a.model) ? `<span>🏷️ <strong>ยี่ห้อ/รุ่น:</strong> ${escHtml([a.brand, a.model].filter(Boolean).join(' '))}</span>` : ''}
+              ${(a.brand || a.model) && a.serial_number ? `<span style="color:var(--border-color);">|</span>` : ''}
+              ${a.serial_number ? `<span>🔢 <strong>S/N:</strong> <code style="font-family:monospace; background:var(--bg-hover); padding:0.05rem 0.25rem; border-radius:3px; color:var(--cmu-purple); font-size:0.72rem;">${escHtml(a.serial_number)}</code></span>` : ''}
+            </div>
           </div>
         </td>
         <td class="col-dept">

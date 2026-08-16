@@ -606,7 +606,12 @@ function renderCriticalTable(assets) {
     const recColor = isBroken ? 'var(--color-danger)' : 'var(--color-warning)';
     return `
       <tr>
-        <td><strong>${escHtml(a.name || '-')}</strong></td>
+        <td>
+          <strong>${escHtml(a.name || '-')}</strong>
+          ${(a.brand || a.model || a.serial_number) ? `<div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.15rem;">
+            ${[[a.brand, a.model].filter(Boolean).join(' '), a.serial_number ? `S/N: ${a.serial_number}` : null].filter(Boolean).join(' | ')}
+          </div>` : ''}
+        </td>
         <td style="font-family:monospace;font-size:0.7rem;">${escHtml(a.asset_key || '-')}</td>
         <td>${escHtml(a.department || '-')}</td>
         <td><span class="badge ${a.condition==='ชำรุด'?'badge-damaged':a.condition==='ดี'?'badge-good':'badge-medium'}">${escHtml(a.condition||'-')}</span></td>

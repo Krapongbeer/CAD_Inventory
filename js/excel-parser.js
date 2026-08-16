@@ -156,6 +156,12 @@ function detectColumns(headerRow, allRows) {
       const cellStr = String(cell).toLowerCase();
       for (const [key, kws] of Object.entries(keywords)) {
         if (kws.some(kw => cellStr.includes(kw))) {
+          // EXCLUSION GUARD: Prevent "ชื่อ" keyword from matching building, owner, assignee, or other columns
+          if (key === 'name') {
+            if (cellStr.includes('อาคาร') || cellStr.includes('ผู้') || cellStr.includes('บัญชี') || cellStr.includes('ชั้น') || cellStr.includes('ห้อง') || cellStr.includes('แก้ไข') || cellStr.includes('จัดเก็บ') || cellStr.includes('ที่อยู่')) {
+              continue;
+            }
+          }
           map[key] = ci;
         }
       }

@@ -1233,8 +1233,15 @@ function openKpiModal(filterKey, title) {
     ? '<tr><td colspan="7" class="text-center" style="padding:2rem;">ไม่พบข้อมูล</td></tr>'
     : filtered.slice(0,200).map(a => {
         const { label } = CAD.getAssetAgeStatus(a.registered_date, a.name, a.asset_id);
+        const brandModel = [a.brand, a.model].filter(Boolean).join(' ');
+        const serialStr = a.serial_number ? `S/N: ${a.serial_number}` : '';
+        const detailStr = [brandModel ? `🏷️ ${brandModel}` : null, serialStr ? `🔢 ${serialStr}` : null].filter(Boolean).join(' | ');
+
         return `<tr class="clickable-row" onclick="closeKpiModal();openAssetPanelByPk(${a.pk});" title="คลิกเพื่อดูรายละเอียด">
-          <td style="font-size:0.85rem;">${escHtml(a.name||'-')}</td>
+          <td style="font-size:0.85rem; padding:0.6rem 0.5rem;">
+            <div style="font-weight:700; color:var(--text-primary); margin-bottom:0.15rem;">${escHtml(a.name||'-')}</div>
+            ${detailStr ? `<div style="font-size:0.72rem; color:var(--text-muted);">${escHtml(detailStr)}</div>` : ''}
+          </td>
           <td style="font-family:monospace;font-size:0.72rem;color:var(--text-muted);">${escHtml(a.asset_key||'-')}</td>
           <td style="font-size:0.82rem;">${escHtml(shortenDeptName(a.department||'-'))}</td>
           <td style="text-align:right;font-size:0.82rem;">${a.cost?a.cost.toLocaleString('th-TH',{maximumFractionDigits:0}):'-'}</td>
