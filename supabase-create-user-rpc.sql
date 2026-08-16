@@ -14,12 +14,12 @@ declare
   new_user_id uuid;
   result jsonb;
 begin
-  -- 1. ตรวจสอบสิทธิ์ว่าคนที่เรียกฟังก์ชันนี้เป็น Admin หรือไม่
+  -- 1. ตรวจสอบสิทธิ์ว่าคนที่เรียกฟังก์ชันนี้เป็น Admin หรือ Superadmin หรือไม่
   if not exists (
     select 1 from public.user_roles 
-    where user_id = auth.uid() and role = 'admin'
+    where user_id = auth.uid() and role in ('admin', 'superadmin')
   ) then
-    raise exception 'Unauthorized: Only admins can create new users.';
+    raise exception 'Unauthorized: Only admins and superadmins can create new users.';
   end if;
 
   -- 2. สร้างผู้ใช้ใหม่ใน auth.users (Supabase Admin API)

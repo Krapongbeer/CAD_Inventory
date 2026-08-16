@@ -17,7 +17,7 @@
 CREATE TABLE IF NOT EXISTS user_roles (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  role       TEXT NOT NULL CHECK (role IN ('admin', 'staff', 'executive')),
+  role       TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'staff', 'executive')),
   full_name  TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -60,6 +60,15 @@ CREATE TABLE IF NOT EXISTS assets (
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 4. ตารางประวัติการทำงาน (Activity Logs)
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  action      TEXT NOT NULL,
+  details     TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ================================================================
 -- Row Level Security (RLS)
 -- ================================================================
@@ -67,6 +76,7 @@ CREATE TABLE IF NOT EXISTS assets (
 ALTER TABLE upload_batches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 
 -- upload_batches: ทุกคน login แล้วอ่านได้
 CREATE POLICY "Authenticated users can read upload_batches"
@@ -80,7 +90,7 @@ CREATE POLICY "Admins can insert upload_batches"
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM user_roles
-      WHERE user_id = auth.uid() AND role = 'admin'
+      WHERE user_id = auth.uid() AND role IN ('admin', 'superadmin')
     )
   );
 
@@ -90,7 +100,7 @@ CREATE POLICY "Admins can delete upload_batches"
   USING (
     EXISTS (
       SELECT 1 FROM user_roles
-      WHERE user_id = auth.uid() AND role = 'admin'
+      WHERE user_id = auth.uid() AND role IN ('admin', 'superadmin')
     )
   );
 
@@ -106,7 +116,7 @@ CREATE POLICY "Admins can insert assets"
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM user_roles
-      WHERE user_id = auth.uid() AND role = 'admin'
+      WHERE user_id = auth.uid() AND role IN ('admin', 'superadmin')
     )
   );
 
@@ -116,7 +126,7 @@ CREATE POLICY "Admins can delete assets"
   USING (
     EXISTS (
       SELECT 1 FROM user_roles
-      WHERE user_id = auth.uid() AND role = 'admin'
+      WHERE user_id = auth.uid() AND role IN ('admin', 'superadmin')
     )
   );
 
@@ -130,13 +140,25 @@ CREATE POLICY "Users can read own role"
 CREATE POLICY "Admins can read all roles"
   ON user_roles FOR SELECT
   TO authenticated
-  USING (get_current_user_role() = 'admin');
+  USING (get_current_user_role() IN ('admin', 'superadmin'));
 
 -- user_roles: Admins can update roles
 CREATE POLICY "Admins can update roles"
   ON user_roles FOR UPDATE
   TO authenticated
-  USING (get_current_user_role() = 'admin');
+  USING (get_current_user_role() IN ('admin', 'superadmin'));
+
+-- activity_logs: Authenticated users can insert their own logs
+CREATE POLICY "Users can insert logs"
+  ON activity_logs FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+-- activity_logs: Admins can read all logs
+CREATE POLICY "Admins can read logs"
+  ON activity_logs FOR SELECT
+  TO authenticated
+  USING (get_current_user_role() IN ('admin', 'superadmin'));
 
 -- ================================================================
 -- Indexes สำหรับ Query ที่ใช้บ่อย

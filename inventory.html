@@ -63,21 +63,23 @@
   <div class="main-content">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="btn-menu-toggle btn-icon" onclick="toggleSidebar()">
+        <button class="btn-menu-toggle btn-icon" onclick="toggleSidebar()" style="color:white">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-        <div class="page-title-group">
+        <span class="superadmin-badge" id="topbarSuperadminBadge" style="display:none;">SUPERADMIN</span>
+        <div class="page-title-group" style="margin-left: 0.5rem;">
           <h1 class="page-title">รายการครุภัณฑ์</h1>
           <p class="page-subtitle" id="totalLabel">ทั้งหมด — รายการ</p>
         </div>
       </div>
       <div class="topbar-right">
         <!-- Theme Switcher -->
-        <div class="theme-switcher-group" style="display: flex; gap: 0.25rem; background: var(--bg-hover); padding: 0.25rem; border-radius: 20px; margin-right: 1rem;">
-          <button class="btn-icon" style="padding:0.25rem; border-radius:50%;" onclick="ThemeManager.setTheme('light')" title="สว่าง">🌞</button>
-          <button class="btn-icon" style="padding:0.25rem; border-radius:50%;" onclick="ThemeManager.setTheme('dark')" title="มืด">🌙</button>
-          <button class="btn-icon" style="padding:0.25rem; border-radius:50%;" onclick="ThemeManager.setTheme('auto')" title="อัตโนมัติ">⚙️</button>
-        </div>
+        <select class="theme-dropdown" onchange="ThemeManager.setTheme(this.value)" id="themeSelectDropdown">
+          <option value="light">🌞 สว่าง (Light)</option>
+          <option value="dark">🌙 มืด (Dark)</option>
+          <option value="auto">⚙️ อัตโนมัติ (Auto)</option>
+        </select>
+        
         <button class="btn btn-secondary btn-sm" id="btnExportExcel" onclick="exportExcel()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           Export Excel
@@ -86,6 +88,15 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           Export PDF
         </button>
+
+        <div class="topbar-user-area">
+          <div class="topbar-avatar" id="topbarUserAvatar">?</div>
+          <span class="topbar-username" id="topbarUserName">กำลังโหลด...</span>
+          <span class="topbar-role-badge" id="topbarUserRoleBadge" style="display:none;">
+            <span id="topbarUserRoleIcon">🔴</span> <span id="topbarUserRoleText">ผู้ดูแลระบบสูงสุด</span>
+          </span>
+          <button class="topbar-btn-logout" onclick="signOut()">ออกจากระบบ</button>
+        </div>
       </div>
     </header>
 
