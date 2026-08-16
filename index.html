@@ -143,7 +143,7 @@
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const email = document.getElementById('email').value.trim();
+        const email = document.getElementById('email').value.trim().toLowerCase();
         const password = document.getElementById('password').value;
 
         if (!email || !password) {
@@ -187,6 +187,7 @@
         if (msg.includes('Email not confirmed')) return 'บัญชีนี้ยังไม่ได้รับการยืนยันอีเมล กรุณาติดต่อผู้ดูแลระบบ';
         if (msg.includes('User not found')) return 'ไม่พบบัญชีผู้ใช้งานนี้ในระบบ';
         if (msg.includes('Too many requests')) return 'มีการพยายามเข้าสู่ระบบถี่เกินไป กรุณารอสักครู่แล้วลองใหม่';
+        if (msg.includes('Database error querying schema')) return 'ไม่พบข้อมูลบัญชีหรืออีเมลนี้ในระบบ (กรุณาตรวจสอบการสะกดอีเมล)';
         return msg;
       }
     });
