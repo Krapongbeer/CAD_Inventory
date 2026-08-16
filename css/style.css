@@ -365,15 +365,30 @@ input, select, textarea { font-family: inherit; }
 
 .input-toggle {
   position: absolute;
-  right: 0.875rem;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--text-muted);
   display: flex;
   align-items: center;
-  transition: color var(--transition-fast);
-  padding: 0.25rem;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
 }
 
-.input-toggle:hover { color: var(--cmu-purple); }
+.input-toggle:hover {
+  color: var(--cmu-purple-mid);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.input-toggle svg {
+  pointer-events: none;
+}
 
 /* Login Button */
 .btn-login {
