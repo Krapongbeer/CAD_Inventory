@@ -12,13 +12,16 @@ CAD-Inventory-Dashboard/
 ├── inventory.html          ← ตารางรายการครุภัณฑ์ทั้งหมด
 ├── upload.html             ← อัปโหลดไฟล์ Excel (Admin)
 ├── report.html             ← รายงานสำหรับผู้บริหาร
-├── supabase-schema.sql     ← SQL สำหรับสร้าง Database
-├── assets/images/cmu_logo.jpg            ← โลโก้มหาวิทยาลัย
+├── users.html              ← จัดการผู้ใช้ & Audit Log (Superadmin/Admin)
+├── database/
+│   └── schema.sql          ← Master Database Schema & Secure RPC Functions
+├── assets/images/          ← โลโก้และรูปภาพระบบ
 ├── css/
 │   └── style.css           ← Design system ทั้งหมด
 └── js/
     ├── config.js           ← ⚠️ ต้องแก้ไข Supabase Keys ที่นี่
     ├── auth.js             ← ระบบ Login / Role management
+    ├── theme.js            ← จัดการโหมดกลางวัน/กลางคืน
     └── excel-parser.js     ← อ่านไฟล์ Excel (SheetJS)
 ```
 
@@ -34,12 +37,12 @@ CAD-Inventory-Dashboard/
 4. ตั้ง Database Password (จดไว้)
 5. รอ Project สร้างเสร็จ (~2 นาที)
 
-### ขั้นที่ 2: รัน SQL Schema
+### ขั้นที่ 2: รัน Master SQL Schema
 
 1. ไปที่ Supabase Dashboard → **SQL Editor**
 2. คลิก **New query**
-3. Copy เนื้อหาจากไฟล์ `supabase-schema.sql` แล้ว Paste
-4. คลิก **Run** (Ctrl+Enter)
+3. Copy เนื้อหาจากไฟล์ `database/schema.sql` แล้ว Paste
+4. คลิก **Run** (Ctrl+Enter / Cmd+Enter)
 
 ### ขั้นที่ 3: ดึง API Keys
 
