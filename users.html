@@ -494,6 +494,7 @@ function renderUsersTable(users) {
   }
 
   tbody.innerHTML = users.map((u, i) => {
+    const isMe = u.user_id === currentUserData?.session?.user?.id;
     const initial = (u.full_name || u.email || '?').charAt(0).toUpperCase();
     const displayEmail = u.email || 'ไม่ระบุอีเมล';
     const username = displayEmail.includes('@') ? displayEmail.split('@')[0] : (u.full_name || 'user');
@@ -501,12 +502,15 @@ function renderUsersTable(users) {
     const isSuspended = u.status === 'suspended';
 
     return `
-      <tr>
+      <tr style="${isMe ? 'background: rgba(74,30,138,0.03);' : ''}">
         <td>
           <div style="display:flex; align-items:center; gap:0.85rem;">
             <div style="width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, var(--cmu-purple-mid), var(--cmu-purple-light)); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.92rem; flex-shrink:0; box-shadow:0 2px 6px rgba(74,30,138,0.2);">${initial}</div>
             <div>
-              <strong style="font-size:0.92rem; color:var(--text-primary); display:block; line-height:1.35;">${escHtml(u.full_name || '-')}</strong>
+              <div style="display:flex; align-items:center; gap:0.3rem;">
+                <strong style="font-size:0.92rem; color:var(--text-primary); line-height:1.35;">${escHtml(u.full_name || '-')}</strong>
+                ${isMe ? '<span style="background:var(--cmu-purple-pale); color:var(--cmu-purple-dark); font-size:0.7rem; font-weight:700; padding:0.1rem 0.45rem; border-radius:99px; border:1px solid rgba(74,30,138,0.2);">คุณ</span>' : ''}
+              </div>
             </div>
           </div>
         </td>
@@ -544,12 +548,16 @@ function renderUsersTable(users) {
             <button class="btn-action-pill btn-action-key" onclick="openQuickResetModal('${u.user_id}', '${escHtml(u.full_name||'')}', '${escHtml(displayEmail)}')" title="รีเซ็ตรหัสผ่าน">
               🔑 รีเซ็ต
             </button>
-            <button class="btn-action-pill btn-action-block" onclick="toggleUserStatus('${u.user_id}', '${u.status||'active'}', '${escHtml(u.full_name||'')}')" title="${isSuspended?'ปลดบล็อก':'ระงับการใช้งาน'}">
-              ${isSuspended ? '🔓 ปลดบล็อก' : '🚫 บล็อก'}
-            </button>
-            <button class="btn-action-pill btn-action-delete" onclick="confirmDirectDeleteUser('${u.user_id}', '${escHtml(u.full_name||'')}')" title="ลบบัญชีผู้ใช้">
-              🗑️
-            </button>
+            ${!isMe ? `
+              <button class="btn-action-pill btn-action-block" onclick="toggleUserStatus('${u.user_id}', '${u.status||'active'}', '${escHtml(u.full_name||'')}')" title="${isSuspended?'ปลดบล็อก':'ระงับการใช้งาน'}">
+                ${isSuspended ? '🔓 ปลดบล็อก' : '🚫 บล็อก'}
+              </button>
+              <button class="btn-action-pill btn-action-delete" onclick="confirmDirectDeleteUser('${u.user_id}', '${escHtml(u.full_name||'')}')" title="ลบบัญชีผู้ใช้">
+                🗑️
+              </button>
+            ` : `
+              <span style="font-size:0.75rem; color:var(--text-muted); font-style:italic; padding:0 0.35rem;">(บัญชีปัจจุบัน)</span>
+            `}
           </div>
         </td>
       </tr>
@@ -592,6 +600,11 @@ async function quickChangeRole(userId, newRole, fullName) {
 
 // Toggle User Status (Active / Suspended)
 async function toggleUserStatus(userId, currentStatus, fullName) {
+  if (userId === currentUserData?.session?.user?.id) {
+    alert('คุณไม่สามารถระงับการใช้งานบัญชีของตัวเองที่กำลังล็อกอินอยู่ได้');
+    return;
+  }
+
   const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
   const label = newStatus === 'suspended' ? 'ระงับการใช้งาน' : 'เปิดใช้งานปกติ';
 
@@ -619,6 +632,11 @@ async function toggleUserStatus(userId, currentStatus, fullName) {
 
 // Direct Delete User
 async function confirmDirectDeleteUser(userId, fullName) {
+  if (userId === currentUserData?.session?.user?.id) {
+    alert('คุณไม่สามารถลบบัญชีของตัวเองที่กำลังล็อกอินอยู่ได้');
+    return;
+  }
+
   if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบบัญชีของ "${fullName}" ออกจากระบบถาวร?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`)) {
     try {
       const { error } = await adminDeleteUser(userId);
