@@ -87,11 +87,13 @@ async function populateNavUser() {
     superadmin: 'ผู้ดูแลระบบสูงสุด',
     admin: 'ผู้ดูแลระบบ',
     staff: 'เจ้าหน้าที่',
-    executive: 'ผู้บริหาร'
+    executive: 'ผู้บริหาร',
+    editor: 'ผู้นำเข้าข้อมูล',
+    viewer: 'ผู้ดูรายงาน'
   };
 
   const nameStr = userRole?.full_name || session?.user?.email || '-';
-  const roleStr = roleLabels[userRole?.role] || '-';
+  const roleStr = roleLabels[userRole?.role] || userRole?.role || '-';
   
   // Legacy sidebar fallback
   const nameEl = document.getElementById('navUserName');
@@ -124,11 +126,18 @@ async function populateNavUser() {
       tbRoleBadge.className = 'topbar-role-badge admin';
       if(tbRoleIcon) tbRoleIcon.textContent = '🟠';
       if(tbSuperadminBadge) tbSuperadminBadge.style.display = 'none';
+    } else if (userRole?.role === 'executive') {
+      tbRoleBadge.className = 'topbar-role-badge';
+      tbRoleBadge.style.background = 'rgba(168, 85, 247, 0.2)';
+      tbRoleBadge.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+      tbRoleBadge.style.color = '#e9d5ff';
+      if(tbRoleIcon) tbRoleIcon.textContent = '🟣';
+      if(tbSuperadminBadge) tbSuperadminBadge.style.display = 'none';
     } else {
-      tbRoleBadge.className = 'topbar-role-badge admin'; // fallback style
-      tbRoleBadge.style.color = '#3b82f6';
-      tbRoleBadge.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-      tbRoleBadge.style.background = 'rgba(59, 130, 246, 0.15)';
+      tbRoleBadge.className = 'topbar-role-badge';
+      tbRoleBadge.style.color = '#93c5fd';
+      tbRoleBadge.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+      tbRoleBadge.style.background = 'rgba(59, 130, 246, 0.2)';
       if(tbRoleIcon) tbRoleIcon.textContent = '🔵';
       if(tbSuperadminBadge) tbSuperadminBadge.style.display = 'none';
     }
@@ -138,7 +147,7 @@ async function populateNavUser() {
 
 // Add init logic to sync theme dropdown
 document.addEventListener('DOMContentLoaded', () => {
-  const currentTheme = localStorage.getItem('theme') || 'auto';
+  const currentTheme = localStorage.getItem('cad_theme_preference') || 'auto';
   const sel = document.getElementById('themeSelectDropdown');
   if (sel) sel.value = currentTheme;
 });
