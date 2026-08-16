@@ -1,4 +1,8 @@
-# OS generated files
+# ================================================================
+# SmartCAD Inventory: Security-Hardened .gitignore
+# ================================================================
+
+# 1. OS & System Artifacts
 .DS_Store
 .DS_Store?
 ._*
@@ -6,25 +10,66 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
+*.tmp
+*.swp
+*.swo
 
-# Sensitive Data / Excel files
+# 2. Sensitive Data, Excel, CSV, Raw Assets
 data/
 *.xlsx
 *.xls
 *.csv
+*.tsv
+*.json.bak
+*.bak
 
-# Dependencies / Environment (if any used later)
-node_modules/
-
-# Security (Secrets and Dumps)
+# 3. Security, Private Keys, Service Role & Environment Secrets
 .env
 .env.*
+.env.local
+.env.production
+.env.development
 secrets/
 keys/
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+id_rsa
+id_ed25519
+service_role*
+*service_role*
+
+# 4. Database Dumps & Query Logs
 *.sql.bak
 *.sql.dump
 *.dump
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Backups
+# 5. Local Backup Archives (Zips remain strictly on local machine)
 *.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+CAD-Inventory-Dashboard-Backup*.zip
+
+# 6. IDE, AI Workspace & Temp Directories
+.vscode/
+.idea/
+scratch/
+.system_generated/
+__pycache__/
+*.pyc
+
+# 7. Dependencies & Build Artifacts
+node_modules/
+dist/
+build/
