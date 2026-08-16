@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
   email       TEXT,
   department  TEXT DEFAULT 'กองบริหารงานกลาง',
   status      TEXT DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'pending')),
+  must_change_password BOOLEAN DEFAULT true,
+  last_password_change TIMESTAMPTZ DEFAULT NOW(),
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -32,6 +34,8 @@ BEGIN
   ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS email TEXT;
   ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS department TEXT DEFAULT 'กองบริหารงานกลาง';
   ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+  ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT true;
+  ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS last_password_change TIMESTAMPTZ DEFAULT NOW();
 EXCEPTION
   WHEN OTHERS THEN NULL;
 END $$;
@@ -234,7 +238,7 @@ BEGIN
     gen_random_uuid(),
     'authenticated',
     'authenticated',
-    admin_create_user.email,
+    lower(trim(admin_create_user.email)),
     crypt(admin_create_user.password, gen_salt('bf')),
     NOW(),
     '{"provider":"email","providers":["email"]}',
@@ -256,7 +260,7 @@ BEGIN
   ) VALUES (
     new_user_id,
     new_user_id,
-    jsonb_build_object('sub', new_user_id::text, 'email', admin_create_user.email),
+    jsonb_build_object('sub', new_user_id::text, 'email', lower(trim(admin_create_user.email))),
     'email',
     new_user_id::text,
     NOW(),
@@ -264,19 +268,32 @@ BEGIN
     NOW()
   ) ON CONFLICT DO NOTHING;
 
-  -- เพิ่มสิทธิ์ใน user_roles
-  INSERT INTO public.user_roles (user_id, role, full_name, email, department, status)
-  VALUES (new_user_id, admin_create_user.user_role, admin_create_user.full_name, admin_create_user.email, 'กองบริหารงานกลาง', 'active')
+  -- เพิ่มสิทธิ์ใน user_roles พร้อมสถานะต้องเปลี่ยนรหัสผ่านครั้งแรก
+  INSERT INTO public.user_roles (
+    user_id, role, full_name, email, department, status, must_change_password, last_password_change
+  )
+  VALUES (
+    new_user_id,
+    admin_create_user.user_role,
+    admin_create_user.full_name,
+    lower(trim(admin_create_user.email)),
+    'กองบริหารงานกลาง',
+    'active',
+    true,
+    NOW()
+  )
   ON CONFLICT (user_id) DO UPDATE
   SET role = EXCLUDED.role,
       full_name = EXCLUDED.full_name,
       email = EXCLUDED.email,
       department = COALESCE(user_roles.department, EXCLUDED.department),
-      status = COALESCE(user_roles.status, EXCLUDED.status);
+      status = COALESCE(user_roles.status, EXCLUDED.status),
+      must_change_password = true,
+      last_password_change = NOW();
 
   -- บันทึก Audit Log
   INSERT INTO public.activity_logs (user_id, action, details)
-  VALUES (auth.uid(), 'create_user', 'สร้างผู้ใช้ใหม่: ' || admin_create_user.full_name || ' (' || admin_create_user.user_role || ') อีเมล: ' || admin_create_user.email);
+  VALUES (auth.uid(), 'create_user', 'สร้างผู้ใช้ใหม่: ' || admin_create_user.full_name || ' (' || admin_create_user.user_role || ') อีเมล: ' || admin_create_user.email || ' [รหัสผ่านชั่วคราว - รอเปลี่ยนรหัส]');
 
   RETURN jsonb_build_object('success', true, 'user_id', new_user_id);
 END;
@@ -308,13 +325,14 @@ BEGIN
   UPDATE public.user_roles 
   SET full_name = new_full_name,
       role = new_role,
-      email = COALESCE(new_email, user_roles.email)
+      email = COALESCE(lower(trim(new_email)), user_roles.email),
+      must_change_password = CASE WHEN new_password IS NOT NULL THEN true ELSE user_roles.must_change_password END
   WHERE user_roles.user_id = target_user_id;
 
   -- 2. อัปเดต metadata ใน auth.users
   UPDATE auth.users 
   SET raw_user_meta_data = jsonb_set(COALESCE(raw_user_meta_data, '{}'::jsonb), '{full_name}', to_jsonb(new_full_name)),
-      email = COALESCE(new_email, auth.users.email)
+      email = COALESCE(lower(trim(new_email)), auth.users.email)
   WHERE auth.users.id = target_user_id;
 
   -- 3. หากมีการระบุรหัสผ่านใหม่ (Password Reset)
@@ -334,7 +352,46 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
--- 4.3 RPC: ลบบัญชีผู้ใช้ออกจากระบบ (Superadmin / Admin)
+-- 4.3 RPC: ผู้ใช้เปลี่ยนรหัสผ่านของตนเอง (NIST First-Login Password Change)
+CREATE OR REPLACE FUNCTION public.user_change_own_password(
+  new_password TEXT
+) RETURNS JSONB AS $$
+DECLARE
+  current_uid UUID;
+  user_name TEXT;
+BEGIN
+  current_uid := auth.uid();
+  IF current_uid IS NULL THEN
+    RAISE EXCEPTION 'Unauthorized: User is not authenticated.';
+  END IF;
+
+  IF new_password IS NULL OR length(trim(new_password)) < 8 THEN
+    RAISE EXCEPTION 'Password does not meet NIST requirements: Minimum 8 characters required.';
+  END IF;
+
+  -- 1. อัปเดตรหัสผ่านใน auth.users
+  UPDATE auth.users
+  SET encrypted_password = crypt(new_password, gen_salt('bf')),
+      updated_at = NOW()
+  WHERE id = current_uid;
+
+  -- 2. ปลดสถานะ must_change_password ใน user_roles
+  UPDATE public.user_roles
+  SET must_change_password = false,
+      last_password_change = NOW()
+  WHERE user_id = current_uid
+  RETURNING full_name INTO user_name;
+
+  -- 3. บันทึก Audit Log
+  INSERT INTO public.activity_logs (user_id, action, details)
+  VALUES (current_uid, 'reset_password', 'ผู้ใช้เปลี่ยนรหัสผ่านใหม่สำเร็จ (NIST First-Login Setup): ' || COALESCE(user_name, 'User'));
+
+  RETURN jsonb_build_object('success', true, 'message', 'Password updated successfully');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- 4.4 RPC: ลบบัญชีผู้ใช้ออกจากระบบ (Superadmin / Admin)
 CREATE OR REPLACE FUNCTION public.admin_delete_user(
   target_user_id UUID
 ) RETURNS JSONB AS $$
@@ -368,9 +425,10 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
--- 4.4 ให้สิทธิ์ Execute แก่ Authenticated Users
+-- 4.5 ให้สิทธิ์ Execute แก่ Authenticated Users
 GRANT EXECUTE ON FUNCTION public.admin_create_user(TEXT, TEXT, TEXT, TEXT) TO authenticated, service_role, anon;
 GRANT EXECUTE ON FUNCTION public.admin_update_user(UUID, TEXT, TEXT, TEXT, TEXT) TO authenticated, service_role, anon;
+GRANT EXECUTE ON FUNCTION public.user_change_own_password(TEXT) TO authenticated, service_role, anon;
 GRANT EXECUTE ON FUNCTION public.admin_delete_user(UUID) TO authenticated, service_role, anon;
 
 -- ================================================================
