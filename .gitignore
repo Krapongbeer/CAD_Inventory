@@ -15,6 +15,17 @@ data/
 
 # Dependencies / Environment (if any used later)
 node_modules/
+
+# Security (Secrets and Dumps)
 .env
-research_docs/
+.env.*
+secrets/
+keys/
+*.sql.bak
+*.sql.dump
+*.dump
+*.log
+
+# Backups
 *.zip
+research_docs/
