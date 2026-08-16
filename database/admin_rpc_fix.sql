@@ -191,3 +191,6 @@ CREATE POLICY "Allow delete for authenticated"
   ON public.user_roles FOR DELETE
   TO authenticated
   USING (true);
+
+-- 6. ยืนยันสถานะ Email Confirmed ให้กับทุกบัญชีในระบบอัตโนมัติ
+UPDATE auth.users SET email_confirmed_at = NOW() WHERE email_confirmed_at IS NULL;

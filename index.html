@@ -182,10 +182,12 @@
       }
 
       function getThaiErrorMessage(msg) {
-        if (msg.includes('Invalid login credentials')) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
-        if (msg.includes('Email not confirmed')) return 'กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ';
-        if (msg.includes('Too many requests')) return 'ลองใหม่อีกครั้งในภายหลัง (คำขอมากเกินไป)';
-        return 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+        if (!msg) return 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+        if (msg.includes('Invalid login credentials')) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
+        if (msg.includes('Email not confirmed')) return 'บัญชีนี้ยังไม่ได้รับการยืนยันอีเมล กรุณาติดต่อผู้ดูแลระบบ';
+        if (msg.includes('User not found')) return 'ไม่พบบัญชีผู้ใช้งานนี้ในระบบ';
+        if (msg.includes('Too many requests')) return 'มีการพยายามเข้าสู่ระบบถี่เกินไป กรุณารอสักครู่แล้วลองใหม่';
+        return msg;
       }
     });
   </script>
